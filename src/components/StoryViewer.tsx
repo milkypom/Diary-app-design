@@ -3,7 +3,6 @@ import "./StoryViewer.css";
 
 export type Post = {
   id: string | number;
-  // imageUrl may sometimes be an array or a string; runtime code will pick the first entry
   imageUrl?: any;
   content?: string;
   title?: string;
@@ -19,7 +18,8 @@ type Props = {
   tag?: string;
   onClose?: () => void;
   onFinish?: () => void;
-  onOpenPost?: (postId: string | number) => void; // open detail view
+  onOpenPost?: (postId: string | number) => void;
+  onPrevBoundary?: () => void; // <-- 추가: 첫 게시물에서 이전 요청시 부모로 알림
 };
 
 export default function StoryViewer({
@@ -29,12 +29,12 @@ export default function StoryViewer({
   onClose,
   onFinish,
   onOpenPost,
+  onPrevBoundary,
 }: Props) {
   const [index, setIndex] = useState(() => Math.max(0, initialIndex));
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<number | null>(null);
 
-  // When posts array changes, ensure index stays in a valid range.
   useEffect(() => {
     if (!posts || posts.length === 0) {
       setIndex(0);
@@ -42,7 +42,6 @@ export default function StoryViewer({
     }
     const clamped = Math.max(0, Math.min(index, posts.length - 1));
     if (clamped !== index) setIndex(clamped);
-    // If initialIndex changed (parent reopened viewer), respect it up to bounds
     const initClamped = Math.max(0, Math.min(initialIndex, posts.length - 1));
     if (initialIndex !== undefined && initClamped !== index) {
       setIndex(initClamped);
@@ -50,13 +49,10 @@ export default function StoryViewer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [posts, initialIndex]);
 
-  // Ensure we always read a valid current post
   const safeIndex = posts && posts.length > 0 ? Math.max(0, Math.min(index, posts.length - 1)) : 0;
   const current = posts && posts.length > 0 ? posts[safeIndex] : undefined;
-
   const defaultDuration = 3500;
 
-  // Determine main image safely: if imageUrl is an array, use its first element.
   const imageSrc = current?.imageUrl
     ? Array.isArray(current.imageUrl)
       ? current.imageUrl[0]
@@ -73,7 +69,6 @@ export default function StoryViewer({
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current as number);
     };
-    // we want to restart the timer when index/current/duration/paused change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, paused, current?.durationMs, current?.id]);
 
@@ -96,6 +91,10 @@ export default function StoryViewer({
   function goPrev() {
     if (!posts || posts.length === 0) return;
     if (index > 0) setIndex((i) => i - 1);
+    else {
+      // 첫 게시물에서 이전 요청 → 부모에게 알림 (이전 태그로 이동 등)
+      onPrevBoundary?.();
+    }
   }
 
   const touchStartX = useRef<number | null>(null);
@@ -116,7 +115,7 @@ export default function StoryViewer({
   }
 
   if (!posts || posts.length === 0) return null;
-  if (!current) return null; // extra guard
+  if (!current) return null;
 
   return (
     <div
