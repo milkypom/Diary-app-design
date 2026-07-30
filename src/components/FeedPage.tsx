@@ -36,7 +36,7 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
           new Date(a.createdAt || a.date).getTime()
       )
 
-    const tags = Array.from(new Set(all.flatMap(m => m.tags || [])))
+    const tags = Array.from(new Set(all.flatMap(m => m.tags || []).filter(Boolean)))
     setAllTags(tags)
     setMemos(activeTag ? all.filter(m => m.tags?.includes(activeTag)) : all)
   }, [refreshKey, activeTag])
@@ -224,11 +224,17 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
           }}
           onFinish={handleTagFinish}
           onOpenPost={(id) => {
-            // close viewer first, then navigate to post via prop
+            // close viewer first, then navigate to post via prop or fallback to edit
             setStoryOpen(false)
             setCurrentTagIndex(null)
             setTagOrder([])
-            if (onSelectMemo) onSelectMemo(typeof id === 'string' ? parseInt(id, 10) : id)
+            const parsedId = typeof id === 'string' ? parseInt(id, 10) : id
+            if (onSelectMemo) {
+              onSelectMemo(parsedId)
+            } else {
+              const memoObj = getMemos().find(m => m.id === parsedId)
+              if (memoObj) onEdit(memoObj)
+            }
           }}
         />
       )}
