@@ -126,8 +126,23 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
           {current.content && <div className="story-body">{current.content}</div>}
         </div>
 
-        <button className="nav-btn left" onClick={(e) => { e.stopPropagation(); goPrev(); }} aria-label="Previous">‹</button>
-        <button className="nav-btn right" onClick={(e) => { e.stopPropagation(); goNext(); }} aria-label="Next">›</button>
+        <button
+          className="nav-btn left"
+          onClick={(e) => { e.stopPropagation(); setPaused(true); goPrev(); setTimeout(() => setPaused(false), 50); }}
+          aria-label="Previous"
+          style={{ zIndex: 40, pointerEvents: 'auto' }}
+        >
+          ‹
+        </button>
+
+        <button
+          className="nav-btn right"
+          onClick={(e) => { e.stopPropagation(); setPaused(true); goNext(); setTimeout(() => setPaused(false), 50); }}
+          aria-label="Next"
+          style={{ zIndex: 40, pointerEvents: 'auto' }}
+        >
+          ›
+        </button>
       </div>
     </div>
   );
