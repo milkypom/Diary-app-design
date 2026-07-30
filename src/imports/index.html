@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My Diary</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+<div id="app">
+    <!-- =========================
+         상단 헤더
+         ========================= -->
+    <header class="app-header">
+        <h1 class="logo">DayLOG</h1>
+    </header>
+
+
+    <!-- =========================
+         메인 콘텐츠
+         ========================= -->
+    <main class="main-content">
+
+        <!-- 홈 / 피드 -->
+        <section
+            id="homePage"
+            class="page active"
+            aria-label="일기 피드">
+
+            <!-- 태그 바로가기
+                 feed.js가 실제 사용 중인 태그를 생성 -->
+            <section
+                id="tagShortcuts"
+                class="tag-shortcuts"
+                aria-label="태그 바로가기">
+            </section>
+
+
+            <!-- 일기 피드
+                 feed.js가 일기 카드를 생성 -->
+            <section
+                id="feed"
+                class="feed"
+                aria-label="일기 목록">
+            </section>
+
+        </section>
+
+
+        <!-- =====================
+             검색
+             ===================== -->
+        <section
+            id="searchPage"
+            class="page"
+            aria-label="일기 검색"
+            hidden>
+
+            <div class="search-container">
+
+                <label for="searchInput">
+                    일기 검색
+                </label>
+
+                <input
+                    type="search"
+                    id="searchInput"
+                    placeholder="제목, 내용, 태그 검색">
+
+            </div>
+
+
+            <section
+                id="searchResult"
+                class="feed"
+                aria-label="검색 결과">
+            </section>
+
+        </section>
+
+
+        <section id="myPage" class="page" hidden>
+    <!-- 첫 번째 줄: 프로필 & 통계 -->
+    <div class="my-header">
+        <div class="profile-area">👤 나의 기록장</div>
+        <div class="stats-area" id="myStats">
+            <!-- JS로 자동 주입 -->
+        </div>
+    </div>
+
+    <!-- 두 번째 줄: 뷰 토글 버튼 -->
+    <div class="view-toggle">
+        <button type="button" class="view-btn active" id="gridBtn">그리드 뷰</button>
+        <button type="button" class="view-btn" id="calBtn">달력 뷰</button>
+    </div>
+
+    <!-- 세 번째 줄: 결과 영역 -->
+    <div id="myContentArea">
+        <div id="gridResult" class="grid-view"></div>
+        <div id="calResult" class="calendar-view" hidden>
+            <div id="calGrid"></div>
+            <div id="selectedDatePosts"></div>
+        </div>
+    </div>
+</section>
+
+
+        <!-- =====================
+     북마크
+     ===================== -->
+<section
+    id="bookmarkPage"
+    class="page"
+    aria-label="북마크"
+    hidden>
+
+    <!-- 북마크 전용 태그 바로가기 -->
+    <section
+        id="bookmarkTagShortcuts"
+        class="tag-shortcuts"
+        aria-label="북마크 태그 바로가기">
+    </section>
+
+    <!-- bookmark.js가 북마크 목록을 생성 -->
+    <section
+        id="bookmarkList"
+        class="feed"
+        aria-label="북마크한 일기">
+    </section>
+
+</section>
+
+    </main>
+    <!-- =========================
+         하단 네비게이션
+         ========================= -->
+    <nav
+        class="bottom-nav"
+        aria-label="메인 메뉴">
+
+        <!-- 홈 -->
+        <button
+            type="button"
+            class="nav-item active"
+            data-page="home"
+            aria-label="홈">
+
+            <span class="nav-icon" aria-hidden="true">
+                ⌂
+            </span>
+
+            <span class="nav-label">
+                홈
+            </span>
+
+        </button>
+
+
+        <!-- 검색 -->
+        <button
+            type="button"
+            class="nav-item"
+            data-page="search"
+            aria-label="검색">
+
+            <span class="nav-icon" aria-hidden="true">
+                ⌕
+            </span>
+
+            <span class="nav-label">
+                검색
+            </span>
+
+        </button>
+
+
+        <!-- 작성
+             editor.js가 작성 모달을 생성 -->
+        <button
+            type="button"
+            class="nav-item nav-create"
+            id="newMemoBtn"
+            aria-label="새 일기 작성">
+
+            <span class="nav-icon" aria-hidden="true">
+                ＋
+            </span>
+
+            <span class="nav-label">
+                작성
+            </span>
+
+        </button>
+
+<!-- 마이 페이지  -->
+       <button
+    type="button"
+    class="nav-item"
+    data-page="my"
+    aria-label="마이페이지">
+
+    <span class="nav-icon" aria-hidden="true">
+        👤
+    </span>
+
+    <span class="nav-label">
+        MY
+    </span>
+
+</button>
+
+
+        <!-- 북마크 -->
+        <button
+            type="button"
+            class="nav-item"
+            data-page="bookmark"
+            aria-label="북마크">
+
+            <span class="nav-icon" aria-hidden="true">
+                ♡
+            </span>
+
+            <span class="nav-label">
+                북마크
+            </span>
+
+        </button>
+
+    </nav>
+</div>
+
+    <!-- =========================
+         JavaScript
+         ========================= -->
+   <script src="js/storage.js" defer></script>
+   <script src="js/feed.js" defer></script>
+   <script src="js/editor.js" defer></script>
+   <script src="js/myPage.js" defer></script>
+
+</body>
+</html>

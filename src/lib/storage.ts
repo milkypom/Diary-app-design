@@ -1,0 +1,204 @@
+import type { Memo, EditorData, Comment } from './types'
+
+const KEY = 'daylog_memos'
+
+export function getMemos(): Memo[] {
+  try {
+    const data = localStorage.getItem(KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function saveMemos(memos: Memo[]): boolean {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(memos))
+    return true
+  } catch (e: unknown) {
+    const err = e as { name?: string; code?: number }
+    if (err?.name === 'QuotaExceededError' || err?.code === 22) {
+      alert('Storage is full. Please delete some entries or reduce image sizes.')
+    } else {
+      alert('Failed to save. Please try again.')
+    }
+    return false
+  }
+}
+
+export function getMemo(id: number): Memo | null {
+  return getMemos().find(m => m.id === id) ?? null
+}
+
+export function addMemo(data: EditorData): Memo {
+  const memos = getMemos()
+  const memo: Memo = {
+    id: Date.now(),
+    title: data.title || '',
+    content: data.content || '',
+    date: data.date || new Date().toISOString().split('T')[0],
+    tags: data.tags || [],
+    location: data.location || '',
+    images: data.images || [],
+    weather: data.weather || '',
+    mood: data.mood || '',
+    bookmark: false,
+    deleted: false,
+    createdAt: new Date().toISOString(),
+  }
+  memos.unshift(memo)
+  saveMemos(memos)
+  return memo
+}
+
+export function updateMemo(id: number, data: EditorData): boolean {
+  const memos = getMemos()
+  const idx = memos.findIndex(m => m.id === id)
+  if (idx === -1) return false
+  memos[idx] = {
+    ...memos[idx],
+    title: data.title || '',
+    content: data.content || '',
+    date: data.date || memos[idx].date,
+    tags: data.tags || [],
+    location: data.location || '',
+    images: data.images || [],
+    weather: data.weather || '',
+    mood: data.mood || '',
+    updatedAt: new Date().toISOString(),
+  }
+  saveMemos(memos)
+  return true
+}
+
+export function deleteMemo(id: number): boolean {
+  const memos = getMemos()
+  const memo = memos.find(m => m.id === id)
+  if (!memo) return false
+  memo.deleted = true
+  return saveMemos(memos)
+}
+
+export function toggleBookmark(id: number): boolean {
+  const memos = getMemos()
+  const memo = memos.find(m => m.id === id)
+  if (!memo) return false
+  memo.bookmark = !memo.bookmark
+  saveMemos(memos)
+  return memo.bookmark
+}
+
+export function searchMemos(keyword: string): Memo[] {
+  if (!keyword.trim()) return []
+  const lower = keyword.toLowerCase()
+  return getMemos().filter(m => {
+    if (m.deleted) return false
+    return (
+      m.title?.toLowerCase().includes(lower) ||
+      m.content?.toLowerCase().includes(lower) ||
+      m.tags?.some(t => t.toLowerCase().includes(lower))
+    )
+  })
+}
+
+export function initSampleData(): void {
+  if (getMemos().length > 0) return
+  const now = Date.now()
+  const samples: Memo[] = [
+    {
+      id: now,
+      title: 'Morning coffee at the corner café',
+      content:
+        "Found this quiet little spot near the station. The espresso was perfect — not too bitter, with a hint of chocolate. The kind of place you want to keep all to yourself.",
+      date: new Date().toISOString().split('T')[0],
+      tags: ['café', 'morning', 'daily'],
+      location: 'Corner Café, Seongsu-dong',
+      images: [
+        'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&h=600&fit=crop&auto=format',
+      ],
+      bookmark: true,
+      deleted: false,
+      createdAt: new Date().toISOString(),
+      weather: 'sunny',
+      mood: 'happy',
+    },
+    {
+      id: now + 1,
+      title: 'Evening riverside ride',
+      content:
+        "Cool breeze off the water, city lights just starting to come on. There's something meditative about cycling along the Han River at dusk. All the stress just falls away.",
+      date: new Date(now - 86400000).toISOString().split('T')[0],
+      tags: ['cycling', 'hanriver', 'evening'],
+      location: 'Ttukseom Hangang Park',
+      images: [
+        'https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=600&h=600&fit=crop&auto=format',
+      ],
+      bookmark: false,
+      deleted: false,
+      createdAt: new Date(now - 86400000).toISOString(),
+      weather: 'cloudy',
+      mood: 'normal',
+    },
+    {
+      id: now + 2,
+      title: 'Rainy afternoon with a good book',
+      content:
+        "Rain against the window, chamomile tea, Murakami open on my lap. Sometimes the best days are the ones where nothing happens but everything feels right.",
+      date: new Date(now - 172800000).toISOString().split('T')[0],
+      tags: ['reading', 'cozy', 'rainy'],
+      location: 'Home',
+      images: [
+        'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=600&h=600&fit=crop&auto=format',
+      ],
+      bookmark: true,
+      deleted: false,
+      createdAt: new Date(now - 172800000).toISOString(),
+      weather: 'rainy',
+      mood: 'happy',
+    },
+  ]
+  saveMemos(samples)
+}
+
+// ── Comments ──────────────────────────────────────────────
+
+const COMMENTS_KEY = 'daylog_comments'
+
+function getAllComments(): Comment[] {
+  try {
+    const data = localStorage.getItem(COMMENTS_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function saveAllComments(comments: Comment[]): void {
+  try {
+    localStorage.setItem(COMMENTS_KEY, JSON.stringify(comments))
+  } catch {
+    // ignore quota errors for comments
+  }
+}
+
+export function getComments(memoId: number): Comment[] {
+  return getAllComments().filter(c => c.memoId === memoId)
+}
+
+export function addComment(memoId: number, text: string): Comment {
+  const all = getAllComments()
+  const comment: Comment = {
+    id: Date.now(),
+    memoId,
+    text: text.trim(),
+    createdAt: new Date().toISOString(),
+  }
+  all.push(comment)
+  saveAllComments(all)
+  return comment
+}
+
+export function deleteComment(id: number): void {
+  const all = getAllComments().filter(c => c.id !== id)
+  saveAllComments(all)
+}
