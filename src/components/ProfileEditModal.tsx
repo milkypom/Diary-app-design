@@ -28,12 +28,6 @@ export default function ProfileEditModal({ profile, onSave, onClose }: Props) {
   const [avatarEmoji, setAvatarEmoji] = useState(profile.avatarEmoji)
   const [avatarColor, setAvatarColor] = useState(profile.avatarColor)
   const fileRef = useRef<HTMLInputElement>(null)
-  const [name, setName] = useState(profile.name)
-  const [bio, setBio] = useState(profile.bio)
-  const [avatar, setAvatar] = useState(profile.avatar)
-  const [avatarEmoji, setAvatarEmoji] = useState(profile.avatarEmoji)
-  const [avatarColor, setAvatarColor] = useState(profile.avatarColor)
-  const fileRef = useRef<HTMLInputElement>(null)
 
   const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -90,7 +84,8 @@ export default function ProfileEditModal({ profile, onSave, onClose }: Props) {
               className={`w-24 h-24 rounded-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-4xl shadow-lg mb-3`}
             >
               {avatar ? (
-                <img src={avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                // eslint-disable-next-line jsx-a11y/img-redundant-alt
+                <img src={avatar} alt="avatar" className="w-full h-full rounded-full object-cover" />
               ) : (
                 avatarEmoji
               )}
