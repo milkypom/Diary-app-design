@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { getMemos } from '../lib/storage'
 import type { Memo } from '../lib/types'
 import PostCard from './PostCard'
+import StoryViewer, { Post as StoryPost } from './StoryViewer'
 
 interface Props {
   refreshKey: number
@@ -15,6 +16,11 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
   const [memos, setMemos] = useState<Memo[]>([])
   const [allTags, setAllTags] = useState<string[]>([])
   const [activeTag, setActiveTag] = useState<string | null>(null)
+
+  // story state
+  const [storyOpen, setStoryOpen] = useState(false)
+  const [storyPosts, setStoryPosts] = useState<StoryPost[]>([])
+  const [storyIndex, setStoryIndex] = useState(0)
 
   useEffect(() => {
     const all = getMemos()
@@ -50,7 +56,24 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
   }, [selectedMemoId, onClearSelection])
 
   const handleTagClick = (tag: string) => {
-    setActiveTag(prev => (prev === tag ? null : tag))
+    // Build story posts for the tag
+    const posts = getMemos()
+      .filter(m => !m.deleted && m.tags?.includes(tag))
+      .sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime())
+      .map(m => ({
+        id: m.id,
+        imageUrl: m.images?.[0] ?? undefined,
+        content: m.title || m.content || undefined,
+      }))
+
+    if (posts.length === 0) {
+      setActiveTag(prev => (prev === tag ? null : tag))
+      return
+    }
+
+    setStoryPosts(posts)
+    setStoryIndex(0)
+    setStoryOpen(true)
   }
 
   return (
@@ -101,6 +124,14 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
             />
           ))}
         </div>
+      )}
+
+      {storyOpen && (
+        <StoryViewer
+          posts={storyPosts}
+          initialIndex={storyIndex}
+          onClose={() => setStoryOpen(false)}
+        />
       )}
     </div>
   )
