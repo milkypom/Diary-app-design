@@ -10,10 +10,9 @@ interface Props {
   onRefresh: () => void
   selectedMemoId: number | null
   onClearSelection: () => void
-  onSelectMemo: (id: number) => void
 }
 
-export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId, onClearSelection, onSelectMemo }: Props) {
+export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId, onClearSelection }: Props) {
   const [memos, setMemos] = useState<Memo[]>([])
   const [allTags, setAllTags] = useState<string[]>([])
   const [activeTag, setActiveTag] = useState<string | null>(null)
@@ -202,13 +201,12 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
           }}
           onFinish={handleTagFinish}
           onOpenPost={(id) => {
-            // close viewer first, then navigate to post
+            // close viewer first, then open editor modal
             setStoryOpen(false)
             setCurrentTagIndex(null)
             setTagOrder([])
-            // ensure id is number
-            const nid = typeof id === 'string' ? parseInt(id, 10) : id
-            if (!Number.isNaN(nid)) onSelectMemo(nid as number)
+            const memoObj = getMemos().find(m => m.id === id)
+            if (memoObj) onEdit(memoObj)
           }}
         />
       )}

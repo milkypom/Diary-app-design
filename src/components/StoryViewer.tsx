@@ -18,7 +18,7 @@ type Props = {
   tag?: string;
   onClose?: () => void;
   onFinish?: () => void; // called when finishing all posts in this tag
-  onOpenPost?: (postId: string | number) => void; // navigate to a post
+  onOpenPost?: (postId: string | number) => void; // open detail/editor modal
 };
 
 export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onFinish, onOpenPost }: Props) {
@@ -125,24 +125,30 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
         <button className="close-btn" onClick={onClose} aria-label="Close story">✕</button>
       </div>
 
-      <div className="story-content">
+      <div
+        className="story-content"
+        // single tap / click anywhere in content advances to next
+        onClick={(e) => {
+          // if click originates from an element that stopped propagation (caption/nav), this won't run
+          goNext();
+        }}
+      >
         {current.imageUrl ? (
-          // image click -> next post
-          // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
           <img
             src={String(current.imageUrl)}
             alt="story"
             className="story-media"
-            onClick={goNext}
+            // remove image-specific click; whole content handles single-tap-next
+            // avoid pointer-events on caption overlay
           />
         ) : (
-          <div className="story-text" onClick={() => { onOpenPost?.(current.id); onClose?.(); }}>{current.content}</div>
+          <div className="story-text">{current.content}</div>
         )}
 
         <div
           className="story-caption"
-          // caption click -> open post
-          onClick={() => { onOpenPost?.(current.id); onClose?.(); }}
+          // caption click -> open detail (stop propagation so content onClick doesn't also trigger)
+          onClick={(e) => { e.stopPropagation(); onClose?.(); onOpenPost?.(current.id); }}
         >
           {current.title && <div className="story-title">{current.title}</div>}
           {current.content && <div className="story-body">{current.content}</div>}
