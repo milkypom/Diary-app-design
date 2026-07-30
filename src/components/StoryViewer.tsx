@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import "./StoryViewer.css";
 
 export type Post = {
   id: string | number;
