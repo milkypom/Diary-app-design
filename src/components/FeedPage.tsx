@@ -136,3 +136,16 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
     </div>
   )
 }
+const posts = getMemos()
+  .filter(m => !m.deleted && m.tags?.includes(tag))
+  .sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime())
+  .map(m => ({
+    id: m.id,
+    imageUrl: m.images?.[0] ?? undefined,
+    title: m.title ?? undefined,
+    content: m.content ?? undefined,
+    authorName: m.authorName ?? 'My Diary', // 메모에 author 필드가 없다면 기본값 사용
+    avatarUrl: m.avatarUrl ?? undefined,    // 없다면 기본 아이콘(placeholder) 사용
+    date: m.date || m.createdAt,
+    durationMs: 3500, // 필요 시 per-post duration
+  }))
