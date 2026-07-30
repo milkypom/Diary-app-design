@@ -22,12 +22,38 @@ type Props = {
   onOpenPost?: (postId: string | number) => void; // open detail view
 };
 
-export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onFinish, onOpenPost }: Props) {
-  const [index, setIndex] = useState(initialIndex);
+export default function StoryViewer({
+  posts,
+  initialIndex = 0,
+  tag,
+  onClose,
+  onFinish,
+  onOpenPost,
+}: Props) {
+  const [index, setIndex] = useState(() => Math.max(0, initialIndex));
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<number | null>(null);
 
-  const current = posts[index];
+  // When posts array changes, ensure index stays in a valid range.
+  useEffect(() => {
+    if (!posts || posts.length === 0) {
+      setIndex(0);
+      return;
+    }
+    const clamped = Math.max(0, Math.min(index, posts.length - 1));
+    if (clamped !== index) setIndex(clamped);
+    // If initialIndex changed (parent reopened viewer), respect it up to bounds
+    const initClamped = Math.max(0, Math.min(initialIndex, posts.length - 1));
+    if (initialIndex !== undefined && initClamped !== index) {
+      setIndex(initClamped);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posts, initialIndex]);
+
+  // Ensure we always read a valid current post
+  const safeIndex = posts && posts.length > 0 ? Math.max(0, Math.min(index, posts.length - 1)) : 0;
+  const current = posts && posts.length > 0 ? posts[safeIndex] : undefined;
+
   const defaultDuration = 3500;
 
   // Determine main image safely: if imageUrl is an array, use its first element.
@@ -39,15 +65,17 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
 
   useEffect(() => {
     if (paused) return;
-    const duration = current?.durationMs ?? defaultDuration;
+    if (!current) return;
+    const duration = current.durationMs ?? defaultDuration;
     timerRef.current = window.setTimeout(() => {
       goNext();
     }, duration);
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current as number);
     };
+    // we want to restart the timer when index/current/duration/paused change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, paused, current?.durationMs]);
+  }, [index, paused, current?.durationMs, current?.id]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -57,14 +85,17 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, posts]);
 
   function goNext() {
-    if (index < posts.length - 1) setIndex(i => i + 1);
+    if (!posts || posts.length === 0) return;
+    if (index < posts.length - 1) setIndex((i) => i + 1);
     else onFinish?.();
   }
   function goPrev() {
-    if (index > 0) setIndex(i => i - 1);
+    if (!posts || posts.length === 0) return;
+    if (index > 0) setIndex((i) => i - 1);
   }
 
   const touchStartX = useRef<number | null>(null);
@@ -73,7 +104,10 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
     setPaused(true);
   }
   function onTouchEnd(e: React.TouchEvent) {
-    if (touchStartX.current == null) { setPaused(false); return; }
+    if (touchStartX.current == null) {
+      setPaused(false);
+      return;
+    }
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     if (dx > 50) goPrev();
     else if (dx < -50) goNext();
@@ -82,6 +116,7 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
   }
 
   if (!posts || posts.length === 0) return null;
+  if (!current) return null; // extra guard
 
   return (
     <div
@@ -101,45 +136,61 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
 
         <div className="progress-group">
           {posts.map((p, i) => (
-            <div key={String(p.id)} className={`dot ${i === index ? 'active' : i < index ? 'done' : ''}`}></div>
+            <div
+              key={String(p.id)}
+              className={`dot ${i === safeIndex ? "active" : i < safeIndex ? "done" : ""}`}
+            ></div>
           ))}
         </div>
 
-        <button className="close-btn" onClick={onClose} aria-label="Close story">✕</button>
+        <button className="close-btn" onClick={onClose} aria-label="Close story">
+          ✕
+        </button>
       </div>
 
-      <div
-        className="story-content"
-        onClick={() => { goNext(); }} // single tap anywhere advances
-      >
+      <div className="story-content" onClick={() => goNext()}>
         {imageSrc ? (
           <img src={String(imageSrc)} alt="story" className="story-media" />
         ) : (
-          <div className="story-text">{current.content}</div>
+          <div className="story-text">{current?.content}</div>
         )}
 
         <div
           className="story-caption"
-          onClick={(e) => { e.stopPropagation(); onClose?.(); onOpenPost?.(current.id); }} // open detail
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose?.();
+            onOpenPost?.(current.id);
+          }}
         >
-          {current.title && <div className="story-title">{current.title}</div>}
-          {current.content && <div className="story-body">{current.content}</div>}
+          {current?.title && <div className="story-title">{current.title}</div>}
+          {current?.content && <div className="story-body">{current.content}</div>}
         </div>
 
         <button
           className="nav-btn left"
-          onClick={(e) => { e.stopPropagation(); setPaused(true); goPrev(); setTimeout(() => setPaused(false), 50); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setPaused(true);
+            goPrev();
+            setTimeout(() => setPaused(false), 50);
+          }}
           aria-label="Previous"
-          style={{ zIndex: 40, pointerEvents: 'auto' }}
+          style={{ zIndex: 40, pointerEvents: "auto" }}
         >
           ‹
         </button>
 
         <button
           className="nav-btn right"
-          onClick={(e) => { e.stopPropagation(); setPaused(true); goNext(); setTimeout(() => setPaused(false), 50); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setPaused(true);
+            goNext();
+            setTimeout(() => setPaused(false), 50);
+          }}
           aria-label="Next"
-          style={{ zIndex: 40, pointerEvents: 'auto' }}
+          style={{ zIndex: 40, pointerEvents: "auto" }}
         >
           ›
         </button>
