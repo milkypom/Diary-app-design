@@ -1,12 +1,13 @@
 import { useState, useCallback } from "react"
 import type { Memo, Page } from "./lib/types"
-import { initSampleData } from "./lib/storage"
+import { initSampleData, getMemo, deleteMemo } from "./lib/storage"
 import FeedPage from "./components/FeedPage"
 import SearchPage from "./components/SearchPage"
 import MyPage from "./components/MyPage"
 import BookmarkPage from "./components/BookmarkPage"
 import EditorModal from "./components/EditorModal"
 import BottomNav from "./components/BottomNav"
+import PostDetailPage from "./components/PostDetailPage"
 
 initSampleData()
 
@@ -53,7 +54,19 @@ export default function App() {
 
         {/* Page content */}
         <main className="pb-16">
-          {page === "home" && (
+          {page === "home" && selectedMemoId ? (
+            <PostDetailPage
+              memo={getMemo(selectedMemoId)}
+              onBack={() => setSelectedMemoId(null)}
+              onEdit={openEdit}
+              onDelete={(id) => {
+                deleteMemo(id)
+                setSelectedMemoId(null)
+                refresh()
+              }}
+              onRefresh={refresh}
+            />
+          ) : page === "home" ? (
             <FeedPage
               refreshKey={refreshKey}
               onEdit={openEdit}
@@ -62,18 +75,15 @@ export default function App() {
               onClearSelection={() => setSelectedMemoId(null)}
               onSelectMemo={handleSelectMemo}
             />
-          )}
-          {page === "search" && (
+          ) : page === "search" ? (
             <SearchPage onEdit={openEdit} onRefresh={refresh} />
-          )}
-          {page === "my" && (
+          ) : page === "my" ? (
             <MyPage
               refreshKey={refreshKey}
               onEdit={openEdit}
               onSelectMemo={handleSelectMemo}
             />
-          )}
-          {page === "bookmark" && (
+          ) : (
             <BookmarkPage
               refreshKey={refreshKey}
               onEdit={openEdit}
