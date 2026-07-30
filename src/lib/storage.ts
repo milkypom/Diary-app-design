@@ -1,6 +1,45 @@
 import type { Memo, EditorData, Comment } from './types'
 
 const KEY = 'daylog_memos'
+const PROFILE_KEY = 'daylog_profile'
+
+export interface Profile {
+  name: string
+  bio: string
+  avatar: string
+  avatarEmoji: string
+  avatarColor: string
+}
+
+export function getProfile(): Profile {
+  try {
+    const data = localStorage.getItem(PROFILE_KEY)
+    return data ? JSON.parse(data) : {
+      name: 'My Diary',
+      bio: 'Personal journal',
+      avatar: '',
+      avatarEmoji: '🌿',
+      avatarColor: 'from-[#f5e6d8] to-[#e8c4a2]'
+    }
+  } catch {
+    return {
+      name: 'My Diary',
+      bio: 'Personal journal',
+      avatar: '',
+      avatarEmoji: '🌿',
+      avatarColor: 'from-[#f5e6d8] to-[#e8c4a2]'
+    }
+  }
+}
+
+export function saveProfile(profile: Profile): boolean {
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+    return true
+  } catch {
+    return false
+  }
+}
 
 export function getMemos(): Memo[] {
   try {
@@ -137,7 +176,7 @@ export function initSampleData(): void {
       deleted: false,
       createdAt: new Date(now - 86400000).toISOString(),
       weather: 'cloudy',
-      mood: 'normal',
+      mood: 'grateful',
     },
     {
       id: now + 2,
@@ -154,7 +193,41 @@ export function initSampleData(): void {
       deleted: false,
       createdAt: new Date(now - 172800000).toISOString(),
       weather: 'rainy',
-      mood: 'happy',
+      mood: 'tired',
+    },
+    {
+      id: now + 3,
+      title: 'Exciting news at work!',
+      content:
+        "Got the promotion I've been working towards for months. All the late nights and extra effort finally paid off. Time to celebrate!",
+      date: new Date(now - 259200000).toISOString().split('T')[0],
+      tags: ['work', 'celebration', 'career'],
+      location: 'Office',
+      images: [
+        'https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=600&h=600&fit=crop&auto=format',
+      ],
+      bookmark: false,
+      deleted: false,
+      createdAt: new Date(now - 259200000).toISOString(),
+      weather: 'sunny',
+      mood: 'excited',
+    },
+    {
+      id: now + 4,
+      title: 'Feeling overwhelmed',
+      content:
+        "Too many deadlines piling up. Not sure how I'm going to manage everything this week. Need to take a breath and prioritize.",
+      date: new Date(now - 345600000).toISOString().split('T')[0],
+      tags: ['stress', 'work', 'overwhelmed'],
+      location: 'Home office',
+      images: [
+        'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=600&h=600&fit=crop&auto=format',
+      ],
+      bookmark: false,
+      deleted: false,
+      createdAt: new Date(now - 345600000).toISOString(),
+      weather: 'cloudy',
+      mood: 'anxious',
     },
   ]
   saveMemos(samples)

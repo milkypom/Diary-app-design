@@ -1,6 +1,6 @@
-import { useState, useRef, type ChangeEvent } from 'react'
+import { useState, useRef, useEffect, type ChangeEvent } from 'react'
 import type { Memo, Weather, Mood, EditorData } from '../lib/types'
-import { addMemo, updateMemo } from '../lib/storage'
+import { addMemo, updateMemo, getMemos } from '../lib/storage'
 
 const WEATHER_OPTIONS = [
   { value: 'sunny' as Weather, icon: '☀️', label: 'Sunny' },
@@ -14,6 +14,10 @@ const MOOD_OPTIONS = [
   { value: 'normal' as Mood, icon: '😐', label: 'Okay' },
   { value: 'sad' as Mood, icon: '😢', label: 'Sad' },
   { value: 'angry' as Mood, icon: '😡', label: 'Angry' },
+  { value: 'excited' as Mood, icon: '🤩', label: 'Excited' },
+  { value: 'tired' as Mood, icon: '😴', label: 'Tired' },
+  { value: 'anxious' as Mood, icon: '😰', label: 'Anxious' },
+  { value: 'grateful' as Mood, icon: '🙏', label: 'Grateful' },
 ]
 
 const WEATHER_ICON: Record<string, string> = {
@@ -27,6 +31,10 @@ const MOOD_ICON: Record<string, string> = {
   normal: '😐',
   sad: '😢',
   angry: '😡',
+  excited: '🤩',
+  tired: '😴',
+  anxious: '😰',
+  grateful: '🙏',
 }
 
 function getToday(): string {
@@ -108,29 +116,6 @@ function ImageSlider({
   )
 }
 
-function StepDots({ current }: { current: number }) {
-  return (
-    <div className="flex items-center justify-center gap-2 py-5">
-      {[1, 2, 3].map((s, i) => (
-        <span key={s} className="contents">
-          {i > 0 && <span className="w-8 h-px bg-[#f0ede8] block" />}
-          <span
-            className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-all select-none ${
-              current === s
-                ? 'bg-[#1a1a1a] text-white'
-                : current > s
-                ? 'bg-[#c87941] text-white'
-                : 'bg-[#f0ede8] text-[#9a9a9a]'
-            }`}
-          >
-            {current > s ? '✓' : s}
-          </span>
-        </span>
-      ))}
-    </div>
-  )
-}
-
 const inputCls =
   'w-full px-4 py-3 border border-[#e8e3dd] rounded-xl bg-[#faf9f7] text-[13px] outline-none focus:border-[#bbb] focus:bg-white transition-colors'
 
@@ -143,11 +128,18 @@ export default function EditorModal({ memo, onSave, onClose }: Props) {
   const [mood, setMood] = useState<Mood>(memo?.mood || '')
   const [title, setTitle] = useState(memo?.title || '')
   const [content, setContent] = useState(memo?.content || '')
-  const [tagsInput, setTagsInput] = useState(
-    memo?.tags?.map(t => '#' + t).join(' ') || ''
-  )
+  const [tags, setTags] = useState<string[]>(memo?.tags || [])
+  const [tagInput, setTagInput] = useState('')
+  const [existingTags, setExistingTags] = useState<string[]>([])
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false)
   const [location, setLocation] = useState(memo?.location || '')
   const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const allMemos = getMemos()
+    const tags = Array.from(new Set(allMemos.flatMap(m => m.tags || []))).filter(Boolean)
+    setExistingTags(tags)
+  }, [])
 
   const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'))
@@ -187,7 +179,7 @@ export default function EditorModal({ memo, onSave, onClose }: Props) {
       mood,
       title: title.trim(),
       content: content.trim(),
-      tags: parseTags(tagsInput),
+      tags,
       location: location.trim(),
     }
     if (memo) {
@@ -197,6 +189,31 @@ export default function EditorModal({ memo, onSave, onClose }: Props) {
     }
     onSave()
   }
+
+  const addTag = (tag: string) => {
+    const cleanTag = tag.replace(/^#/, '').trim()
+    if (cleanTag && !tags.includes(cleanTag)) {
+      setTags(prev => [...prev, cleanTag])
+    }
+    setTagInput('')
+    setShowTagSuggestions(false)
+  }
+
+  const removeTag = (tag: string) => {
+    setTags(prev => prev.filter(t => t !== tag))
+  }
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && tagInput.trim()) {
+      e.preventDefault()
+      addTag(tagInput)
+    }
+  }
+
+  const filteredTags = existingTags.filter(tag => 
+    !tags.includes(tag) && 
+    tag.toLowerCase().includes(tagInput.toLowerCase())
+  )
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
@@ -214,10 +231,7 @@ export default function EditorModal({ memo, onSave, onClose }: Props) {
         </div>
 
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center px-5 py-3.5 bg-white/95 backdrop-blur-sm border-b border-[#f0ede8]">
-          <h2 className="flex-1 font-serif text-[17px] font-semibold italic text-[#1a1a1a]">
-            {memo ? 'Edit Entry' : 'New Entry'}
-          </h2>
+        <div className="sticky top-0 z-10 flex items-center justify-end px-5 py-3.5 bg-white/95 backdrop-blur-sm border-b border-[#f0ede8]">
           <button
             className="w-8 h-8 flex items-center justify-center text-[#aaa] text-[22px] hover:text-[#555] transition-colors leading-none"
             onClick={onClose}
@@ -227,18 +241,13 @@ export default function EditorModal({ memo, onSave, onClose }: Props) {
           </button>
         </div>
 
-        <StepDots current={step} />
-
         {/* Step body */}
         <div className="px-5 pb-10">
           {/* ── Step 1: Photos ── */}
           {step === 1 && (
             <div>
               <div className="mb-5">
-                <p className="text-[10px] font-bold tracking-[0.12em] text-[#bbb] uppercase mb-1">
-                  Step 1
-                </p>
-                <h3 className="font-serif text-[21px] font-semibold italic text-[#1a1a1a]">
+                <h3 className="text-[21px] font-semibold italic text-[#1a1a1a]">
                   Today's Photos
                 </h3>
                 <p className="text-[12px] text-[#9a9a9a] mt-0.5">Add photos to your entry</p>
@@ -292,10 +301,7 @@ export default function EditorModal({ memo, onSave, onClose }: Props) {
           {step === 2 && (
             <div>
               <div className="mb-5">
-                <p className="text-[10px] font-bold tracking-[0.12em] text-[#bbb] uppercase mb-1">
-                  Step 2
-                </p>
-                <h3 className="font-serif text-[21px] font-semibold italic text-[#1a1a1a]">
+                <h3 className="text-[21px] font-semibold italic text-[#1a1a1a]">
                   Today's State
                 </h3>
                 <p className="text-[12px] text-[#9a9a9a] mt-0.5">
@@ -389,10 +395,7 @@ export default function EditorModal({ memo, onSave, onClose }: Props) {
           {step === 3 && (
             <div>
               <div className="mb-5">
-                <p className="text-[10px] font-bold tracking-[0.12em] text-[#bbb] uppercase mb-1">
-                  Step 3
-                </p>
-                <h3 className="font-serif text-[21px] font-semibold italic text-[#1a1a1a]">
+                <h3 className="text-[21px] font-semibold italic text-[#1a1a1a]">
                   Today's Record
                 </h3>
                 <p className="text-[12px] text-[#9a9a9a] mt-0.5">Write about your day</p>
@@ -441,13 +444,58 @@ export default function EditorModal({ memo, onSave, onClose }: Props) {
 
               <div className="mb-4">
                 <label className="block text-[12px] font-semibold mb-2">Tags</label>
-                <input
-                  type="text"
-                  value={tagsInput}
-                  placeholder="#café #daily #travel"
-                  onChange={e => setTagsInput(e.target.value)}
-                  className={inputCls}
-                />
+                
+                {/* Selected tags */}
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {tags.map(tag => (
+                      <div
+                        key={tag}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1a1a] text-white rounded-full text-[12px] font-medium"
+                      >
+                        <span>#{tag}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          className="w-4 h-4 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors text-[10px]"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Tag input with suggestions */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={tagInput}
+                    placeholder="Add tag..."
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={handleTagInputKeyDown}
+                    onFocus={() => setShowTagSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowTagSuggestions(false), 200)}
+                    className={inputCls}
+                  />
+
+                  {/* Tag suggestions dropdown */}
+                  {showTagSuggestions && filteredTags.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#e8e3dd] rounded-xl shadow-lg max-h-48 overflow-y-auto z-10">
+                      {filteredTags.map(tag => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => addTag(tag)}
+                          className="w-full px-4 py-2.5 text-left text-[13px] text-[#1a1a1a] hover:bg-[#faf9f7] transition-colors flex items-center justify-between"
+                        >
+                          <span>#{tag}</span>
+                          <span className="text-[11px] text-[#999]">+</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="mb-4">

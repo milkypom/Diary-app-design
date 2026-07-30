@@ -3,7 +3,6 @@ import { getMemos } from '../lib/storage'
 import type { Memo } from '../lib/types'
 import PostCard from './PostCard'
 import StoryViewer, { Post as StoryPost } from './StoryViewer'
-import PostDetailModal from './PostDetailModal'
 
 interface Props {
   refreshKey: number
@@ -11,9 +10,10 @@ interface Props {
   onRefresh: () => void
   selectedMemoId: number | null
   onClearSelection: () => void
+  onSelectMemo?: (id: number) => void
 }
 
-export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId, onClearSelection }: Props) {
+export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId, onClearSelection, onSelectMemo }: Props) {
   const [memos, setMemos] = useState<Memo[]>([])
   const [allTags, setAllTags] = useState<string[]>([])
   const [activeTag, setActiveTag] = useState<string | null>(null)
@@ -26,9 +26,6 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
   // tag order + current tag pointer for "next-tag" progression
   const [tagOrder, setTagOrder] = useState<string[]>([])
   const [currentTagIndex, setCurrentTagIndex] = useState<number | null>(null)
-
-  // detail modal
-  const [detailMemo, setDetailMemo] = useState<Memo | null>(null)
 
   useEffect(() => {
     const all = getMemos()
@@ -76,6 +73,14 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
         date: m.date || m.createdAt,
         durationMs: 3500,
       }))
+  }
+
+  // helper: get latest image for a tag
+  function getLatestImageForTag(tag: string): string | undefined {
+    const memosWithTag = getMemos()
+      .filter(m => !m.deleted && m.tags?.includes(tag) && m.images?.length > 0)
+      .sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime())
+    return memosWithTag[0]?.images?.[0]
   }
 
   // open story viewer starting at the clicked tag; also prepare tagOrder and currentTagIndex
@@ -147,19 +152,32 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
     <div>
       {allTags.length > 0 && (
         <div className="flex gap-3 overflow-x-auto px-4 py-4">
-          {allTags.map(tag => (
-            <button
-              key={tag}
-              onClick={() => handleTagClick(tag)}
-              className={`flex-shrink-0 w-16 h-16 rounded-full text-[11px] font-medium border-2 transition-all flex flex-col items-center justify-center ${
-                activeTag === tag
-                  ? 'bg-[#1a1a1a] text-white border-[#1a1a1a] shadow-md'
-                  : 'bg-[#faf9f7] text-[#777] border-[#e8e3dd] hover:bg-[#f5f0eb] hover:border-[#d0c9c0]'
-              }`}
-            >
-              <span className="truncate max-w-full px-1">#{tag}</span>
-            </button>
-          ))}
+          {allTags.map(tag => {
+            const latestImage = getLatestImageForTag(tag)
+            return (
+              <button
+                key={tag}
+                onClick={() => handleTagClick(tag)}
+                className={`flex-shrink-0 w-16 h-16 rounded-full text-[11px] font-medium border-2 transition-all flex flex-col items-center justify-center relative overflow-hidden ${
+                  activeTag === tag
+                    ? 'border-[#1a1a1a] shadow-md'
+                    : 'border-[#e8e3dd] hover:border-[#d0c9c0]'
+                } ${!latestImage ? (activeTag === tag ? 'bg-[#1a1a1a] text-white' : 'bg-[#faf9f7] text-[#777]') : ''}`}
+              >
+                {latestImage && (
+                  <>
+                    <img 
+                      src={latestImage} 
+                      alt="" 
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/30" />
+                  </>
+                )}
+                <span className={`relative z-10 font-medium px-1 ${latestImage ? 'text-white' : ''}`}>#{tag}</span>
+              </button>
+            )
+          })}
         </div>
       )}
 
@@ -188,6 +206,7 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
               onEdit={onEdit}
               onRefresh={onRefresh}
               onTagClick={handleTagClick}
+              onSelectMemo={onSelectMemo}
             />
           ))}
         </div>
@@ -205,19 +224,15 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
           }}
           onFinish={handleTagFinish}
           onOpenPost={(id) => {
-            // close viewer first, then open detail modal
+            // close viewer first, then navigate to post via prop
             setStoryOpen(false)
             setCurrentTagIndex(null)
             setTagOrder([])
-            const memoObj = getMemos().find(m => m.id === id)
-            if (memoObj) setDetailMemo(memoObj)
+            if (onSelectMemo) onSelectMemo(typeof id === 'string' ? parseInt(id, 10) : id)
           }}
         />
       )}
 
-      {detailMemo && (
-        <PostDetailModal memo={detailMemo} onClose={() => setDetailMemo(null)} />
-      )}
     </div>
   )
 }

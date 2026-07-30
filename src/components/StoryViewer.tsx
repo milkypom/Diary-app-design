@@ -17,8 +17,8 @@ type Props = {
   initialIndex?: number;
   tag?: string;
   onClose?: () => void;
-  onFinish?: () => void; // called when finishing all posts in this tag
-  onOpenPost?: (postId: string | number) => void; // open detail/editor modal
+  onFinish?: () => void;
+  onOpenPost?: (postId: string | number) => void; // open detail view
 };
 
 export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onFinish, onOpenPost }: Props) {
@@ -53,29 +53,19 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
 
   function goNext() {
     if (index < posts.length - 1) setIndex(i => i + 1);
-    else {
-      // finished this tag
-      onFinish?.();
-    }
+    else onFinish?.();
   }
   function goPrev() {
     if (index > 0) setIndex(i => i - 1);
   }
 
-  // Simple swipe detection
   const touchStartX = useRef<number | null>(null);
   function onTouchStart(e: React.TouchEvent) {
     touchStartX.current = e.touches[0].clientX;
     setPaused(true);
   }
-  function onTouchMove(e: React.TouchEvent) {
-    // optional: visual feedback
-  }
   function onTouchEnd(e: React.TouchEvent) {
-    if (touchStartX.current == null) {
-      setPaused(false);
-      return;
-    }
+    if (touchStartX.current == null) { setPaused(false); return; }
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     if (dx > 50) goPrev();
     else if (dx < -50) goNext();
@@ -91,18 +81,12 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
       onMouseDown={() => setPaused(true)}
       onMouseUp={() => setPaused(false)}
       onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
       <div className="story-top">
         <div className="story-profile">
-          {current?.avatarUrl ? (
-            <img src={String(current.avatarUrl)} alt={current.authorName || 'Author'} className="profile-avatar" />
-          ) : (
-            <div className="profile-avatar placeholder">📝</div>
-          )}
+          <div className="profile-avatar placeholder">📝</div>
           <div className="profile-meta">
-            {/* show only tag next to profile */}
             {tag && <div className="profile-tag">#{tag}</div>}
           </div>
         </div>
@@ -118,26 +102,17 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
 
       <div
         className="story-content"
-        // single tap / click anywhere in content advances to next
-        onClick={(e) => {
-          // if click originates from an element that stopped propagation (caption/nav), this won't run
-          goNext();
-        }}
+        onClick={() => { goNext(); }} // single tap anywhere advances
       >
         {current.imageUrl ? (
-          <img
-            src={String(current.imageUrl)}
-            alt="story"
-            className="story-media"
-          />
+          <img src={String(current.imageUrl)} alt="story" className="story-media" />
         ) : (
           <div className="story-text">{current.content}</div>
         )}
 
         <div
           className="story-caption"
-          // caption click -> open detail (stop propagation so content onClick doesn't also trigger)
-          onClick={(e) => { e.stopPropagation(); onClose?.(); onOpenPost?.(current.id); }}
+          onClick={(e) => { e.stopPropagation(); onClose?.(); onOpenPost?.(current.id); }} // open detail
         >
           {current.title && <div className="story-title">{current.title}</div>}
           {current.content && <div className="story-body">{current.content}</div>}

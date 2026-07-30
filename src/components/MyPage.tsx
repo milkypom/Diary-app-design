@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react'
-import { getMemos } from '../lib/storage'
+import { getMemos, getProfile } from '../lib/storage'
 import type { Memo } from '../lib/types'
+import ProfileEditModal from './ProfileEditModal.tsx'
 
 const MOOD_ICON: Record<string, string> = {
   happy: '😊',
   normal: '😐',
   sad: '😢',
   angry: '😡',
+  excited: '🤩',
+  tired: '😴',
+  anxious: '😰',
+  grateful: '🙏',
 }
 
 interface Props {
@@ -21,6 +26,8 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
   const [calYear, setCalYear] = useState(new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(new Date().getMonth())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [profile, setProfile] = useState(getProfile())
+  const [showProfileEdit, setShowProfileEdit] = useState(false)
 
   useEffect(() => {
     const all = getMemos()
@@ -31,6 +38,7 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
           new Date(a.date || a.createdAt).getTime()
       )
     setMemos(all)
+    setProfile(getProfile())
   }, [refreshKey])
 
   const totalWords = memos.reduce((acc, m) => acc + (m.content?.length || 0), 0)
@@ -75,29 +83,43 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
     <div>
       {/* Profile header */}
       <div className="flex items-center justify-between px-5 py-5">
-        <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#f5e6d8] to-[#e8c4a2] flex items-center justify-center text-2xl shadow-sm">
-            🌿
+        <button 
+          onClick={() => setShowProfileEdit(true)}
+          className="flex items-center gap-3 flex-1"
+        >
+          <div 
+            className={`w-14 h-14 rounded-full bg-gradient-to-br ${profile.avatarColor} flex items-center justify-center text-2xl shadow-sm`}
+          >
+            {profile.avatar ? (
+              <img src={profile.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+            ) : (
+              profile.avatarEmoji
+            )}
           </div>
-          <div>
-            <p className="font-semibold text-[15px] text-[#1a1a1a]">My Diary</p>
-            <p className="text-[11px] text-[#9a9a9a]">Personal journal</p>
+          <div className="text-left">
+            <p className="font-semibold text-[15px] text-[#1a1a1a]">{profile.name}</p>
+            <p className="text-[11px] text-[#9a9a9a]">{profile.bio}</p>
           </div>
-        </div>
-        <div className="flex gap-6 text-center">
-          <div>
-            <p className="text-[18px] font-bold text-[#1a1a1a] leading-none">{memos.length}</p>
-            <p className="text-[10px] text-[#9a9a9a] mt-1">Entries</p>
-          </div>
-          <div>
-            <p className="text-[18px] font-bold text-[#1a1a1a] leading-none">
-              {totalWords > 999 ? `${(totalWords / 1000).toFixed(1)}k` : totalWords}
-            </p>
-            <p className="text-[10px] text-[#9a9a9a] mt-1">Chars</p>
-          </div>
-          <div>
-            <p className="text-[18px] font-bold text-[#1a1a1a] leading-none">{tagCount}</p>
-            <p className="text-[10px] text-[#9a9a9a] mt-1">Tags</p>
+        </button>
+        <div className="flex items-center gap-4">
+          <button className="w-8 h-8 flex items-center justify-center text-[#bbb] hover:text-[#555] transition-colors text-lg">
+            ⚙️
+          </button>
+          <div className="flex gap-6 text-center">
+            <div>
+              <p className="text-[18px] font-bold text-[#1a1a1a] leading-none">{memos.length}</p>
+              <p className="text-[10px] text-[#9a9a9a] mt-1">Entries</p>
+            </div>
+            <div>
+              <p className="text-[18px] font-bold text-[#1a1a1a] leading-none">
+                {totalWords > 999 ? `${(totalWords / 1000).toFixed(1)}k` : totalWords}
+              </p>
+              <p className="text-[10px] text-[#9a9a9a] mt-1">Chars</p>
+            </div>
+            <div>
+              <p className="text-[18px] font-bold text-[#1a1a1a] leading-none">{tagCount}</p>
+              <p className="text-[10px] text-[#9a9a9a] mt-1">Tags</p>
+            </div>
           </div>
         </div>
       </div>
@@ -270,7 +292,7 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="font-serif italic text-[14px] font-semibold text-[#1a1a1a] leading-snug truncate">
+                      <p className="italic text-[14px] font-semibold text-[#1a1a1a] leading-snug truncate">
                         {m.title || 'Untitled'}
                       </p>
                       <p className="text-[12px] text-[#9a9a9a] mt-0.5 truncate">{m.content}</p>
@@ -282,6 +304,18 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
             </div>
           )}
         </div>
+      )}
+
+      {/* Profile edit modal */}
+      {showProfileEdit && (
+        <ProfileEditModal
+          profile={profile}
+          onSave={() => {
+            setShowProfileEdit(false)
+            setProfile(getProfile())
+          }}
+          onClose={() => setShowProfileEdit(false)}
+        />
       )}
     </div>
   )

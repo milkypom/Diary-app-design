@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import type { Memo, Comment } from '../lib/types'
-import { toggleBookmark, deleteMemo, getComments, addComment, deleteComment } from '../lib/storage'
+import { toggleBookmark, deleteMemo, getComments, addComment, deleteComment, getProfile } from '../lib/storage'
 
 const WEATHER_ICON: Record<string, string> = {
   sunny: '☀️',
@@ -13,6 +13,10 @@ const MOOD_ICON: Record<string, string> = {
   normal: '😐',
   sad: '😢',
   angry: '😡',
+  excited: '🤩',
+  tired: '😴',
+  anxious: '😰',
+  grateful: '🙏',
 }
 
 const AVATAR_COLORS = [
@@ -77,6 +81,7 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
   const [comments, setComments] = useState<Comment[]>([])
   const [commentText, setCommentText] = useState('')
   const [showFullTime, setShowFullTime] = useState(false)
+  const [profile, setProfile] = useState(getProfile())
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -138,7 +143,7 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
           {memo.mood ? MOOD_ICON[memo.mood] : '📝'}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-semibold leading-none text-[#1a1a1a]">My Diary</p>
+          <p className="text-[13px] font-semibold leading-none text-[#1a1a1a]">{profile.name}</p>
           <button
             className="text-[11px] text-[#9a9a9a] mt-0.5 text-left hover:text-[#666] transition-colors"
             onClick={() => setShowFullTime(t => !t)}
@@ -196,12 +201,18 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
             <>
               <button
                 className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-xl text-[#555] shadow-sm z-10 hover:bg-white transition-colors"
-                onClick={prevImg}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  prevImg()
+                }}
                 aria-label="Previous photo"
               >‹</button>
               <button
                 className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-xl text-[#555] shadow-sm z-10 hover:bg-white transition-colors"
-                onClick={nextImg}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  nextImg()
+                }}
                 aria-label="Next photo"
               >›</button>
               <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
@@ -212,7 +223,10 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
                     className={`h-1.5 rounded-full bg-white transition-all duration-200 ${
                       i === imgIdx ? 'w-4 opacity-100' : 'w-1.5 opacity-50'
                     }`}
-                    onClick={() => setImgIdx(i)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setImgIdx(i)
+                    }}
                   />
                 ))}
               </div>
@@ -263,7 +277,7 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
       {/* Text content */}
       <div className="px-4 pb-4 pt-1">
         {memo.title && (
-          <h2 className="font-serif text-[15px] font-semibold italic text-[#1a1a1a] mb-1.5 leading-snug flex items-center gap-1.5">
+          <h2 className="text-[15px] font-semibold italic text-[#1a1a1a] mb-1.5 leading-snug flex items-center gap-1.5">
             <span>{memo.title}</span>
             {memo.weather && <span className="text-[14px] not-italic" title={memo.weather}>{WEATHER_ICON[memo.weather]}</span>}
           </h2>
