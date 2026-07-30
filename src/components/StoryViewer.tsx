@@ -102,23 +102,14 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
             <div className="profile-avatar placeholder">📝</div>
           )}
           <div className="profile-meta">
-            <div className="profile-name">{current?.authorName ?? 'My Diary'}</div>
-            {/* show tag name under profile */}
+            {/* show only tag next to profile */}
             {tag && <div className="profile-tag">#{tag}</div>}
-            {current?.date && <div className="profile-date">{current.date}</div>}
           </div>
         </div>
 
-        <div className="tag-pill">{tag ? `#${tag}` : null}</div>
-
         <div className="progress-group">
           {posts.map((p, i) => (
-            <div key={String(p.id)} className={`progress ${i < index ? "done" : i === index ? "active" : ""}`}>
-              <div
-                className="bar"
-                style={{ width: i < index ? "100%" : i === index ? (paused ? "50%" : "0%") : "0%" }}
-              />
-            </div>
+            <div key={String(p.id)} className={`dot ${i === index ? 'active' : i < index ? 'done' : ''}`}></div>
           ))}
         </div>
 
@@ -138,8 +129,6 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
             src={String(current.imageUrl)}
             alt="story"
             className="story-media"
-            // remove image-specific click; whole content handles single-tap-next
-            // avoid pointer-events on caption overlay
           />
         ) : (
           <div className="story-text">{current.content}</div>

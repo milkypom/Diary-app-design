@@ -31,26 +31,20 @@
 }
 .profile-avatar.placeholder { font-size:18px }
 .profile-meta { min-width:0 }
-.profile-name { color:#fff; font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
-.profile-date { color:rgba(255,255,255,0.75); font-size:12px }
+.profile-tag { color:#fff; font-weight:600; font-size:14px }
 
-.tag-pill { color:#fff; background: rgba(255,255,255,0.06); padding:6px 10px; border-radius:999px; font-size:13px; margin-left:8px }
+.progress-group { flex:1; display:flex; gap:8px; align-items:center; justify-content:center }
+.dot {
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background: rgba(255,255,255,0.25);
+  transition: transform 150ms ease, background 150ms ease;
+}
+.dot + .dot { margin-left:8px }
+.dot.done { background: rgba(255,255,255,0.6); transform: scale(0.9) }
+.dot.active { background: #ffffff; transform: scale(1.25) }
 
-.progress-group { flex:1; display:flex; gap:8px; align-items:center }
-.progress {
-  flex:1;
-  height:3px;
-  background: rgba(255,255,255,0.2);
-  margin: 0 4px;
-  position: relative;
-  overflow: hidden;
-}
-.progress .bar {
-  height:100%;
-  background: white;
-  width:0%;
-  transition: width 350ms linear;
-}
 .close-btn {
   background:transparent;
   color:white;
