@@ -3,7 +3,8 @@ import "./StoryViewer.css";
 
 export type Post = {
   id: string | number;
-  imageUrl?: string;
+  // imageUrl may sometimes be an array or a string; runtime code will pick the first entry
+  imageUrl?: any;
   content?: string;
   title?: string;
   authorName?: string;
@@ -28,6 +29,13 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
 
   const current = posts[index];
   const defaultDuration = 3500;
+
+  // Determine main image safely: if imageUrl is an array, use its first element.
+  const imageSrc = current?.imageUrl
+    ? Array.isArray(current.imageUrl)
+      ? current.imageUrl[0]
+      : current.imageUrl
+    : undefined;
 
   useEffect(() => {
     if (paused) return;
@@ -104,8 +112,8 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
         className="story-content"
         onClick={() => { goNext(); }} // single tap anywhere advances
       >
-        {current.imageUrl ? (
-          <img src={String(current.imageUrl)} alt="story" className="story-media" />
+        {imageSrc ? (
+          <img src={String(imageSrc)} alt="story" className="story-media" />
         ) : (
           <div className="story-text">{current.content}</div>
         )}
