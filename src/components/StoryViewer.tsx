@@ -15,10 +15,12 @@ export type Post = {
 type Props = {
   posts: Post[];
   initialIndex?: number;
+  tag?: string;
   onClose?: () => void;
+  onFinish?: () => void; // called when finishing all posts in this tag
 };
 
-export default function StoryViewer({ posts, initialIndex = 0, onClose }: Props) {
+export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onFinish }: Props) {
   const [index, setIndex] = useState(initialIndex);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<number | null>(null);
@@ -38,9 +40,22 @@ export default function StoryViewer({ posts, initialIndex = 0, onClose }: Props)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, paused, current?.durationMs]);
 
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft") goPrev();
+      else if (e.key === "ArrowRight") goNext();
+      else if (e.key === "Escape") onClose?.();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [index, posts]);
+
   function goNext() {
     if (index < posts.length - 1) setIndex(i => i + 1);
-    else onClose?.();
+    else {
+      // finished this tag
+      onFinish?.();
+    }
   }
   function goPrev() {
     if (index > 0) setIndex(i => i - 1);
@@ -91,6 +106,8 @@ export default function StoryViewer({ posts, initialIndex = 0, onClose }: Props)
           </div>
         </div>
 
+        <div className="tag-pill">{tag ? `#${tag}` : null}</div>
+
         <div className="progress-group">
           {posts.map((p, i) => (
             <div key={String(p.id)} className={`progress ${i < index ? "done" : i === index ? "active" : ""}`}>
@@ -117,8 +134,8 @@ export default function StoryViewer({ posts, initialIndex = 0, onClose }: Props)
           {current.content && <div className="story-body">{current.content}</div>}
         </div>
 
-        <div className="tap-zone left" onClick={goPrev} />
-        <div className="tap-zone right" onClick={goNext} />
+        <button className="nav-btn left" onClick={goPrev} aria-label="Previous">‹</button>
+        <button className="nav-btn right" onClick={goNext} aria-label="Next">›</button>
       </div>
     </div>
   );
