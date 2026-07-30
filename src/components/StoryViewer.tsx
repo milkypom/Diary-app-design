@@ -94,7 +94,5 @@ export default function StoryViewer({ posts, initialIndex = 0, onClose }: Props)
         )}
         <div className="tap-zone left" onClick={goPrev} />
         <div className="tap-zone right" onClick={goNext} />
-      </div>
-    </div>
-  );
-}
+      </div
+
