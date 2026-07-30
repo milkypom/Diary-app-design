@@ -3,6 +3,7 @@ import { getMemos } from '../lib/storage'
 import type { Memo } from '../lib/types'
 import PostCard from './PostCard'
 import StoryViewer, { Post as StoryPost } from './StoryViewer'
+import PostDetailModal from './PostDetailModal'
 
 interface Props {
   refreshKey: number
@@ -25,6 +26,9 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
   // tag order + current tag pointer for "next-tag" progression
   const [tagOrder, setTagOrder] = useState<string[]>([])
   const [currentTagIndex, setCurrentTagIndex] = useState<number | null>(null)
+
+  // detail modal
+  const [detailMemo, setDetailMemo] = useState<Memo | null>(null)
 
   useEffect(() => {
     const all = getMemos()
@@ -201,14 +205,18 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
           }}
           onFinish={handleTagFinish}
           onOpenPost={(id) => {
-            // close viewer first, then open editor modal
+            // close viewer first, then open detail modal
             setStoryOpen(false)
             setCurrentTagIndex(null)
             setTagOrder([])
             const memoObj = getMemos().find(m => m.id === id)
-            if (memoObj) onEdit(memoObj)
+            if (memoObj) setDetailMemo(memoObj)
           }}
         />
+      )}
+
+      {detailMemo && (
+        <PostDetailModal memo={detailMemo} onClose={() => setDetailMemo(null)} />
       )}
     </div>
   )
