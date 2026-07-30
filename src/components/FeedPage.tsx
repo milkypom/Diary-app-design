@@ -10,9 +10,10 @@ interface Props {
   onRefresh: () => void
   selectedMemoId: number | null
   onClearSelection: () => void
+  onSelectMemo: (id: number) => void
 }
 
-export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId, onClearSelection }: Props) {
+export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId, onClearSelection, onSelectMemo }: Props) {
   const [memos, setMemos] = useState<Memo[]>([])
   const [allTags, setAllTags] = useState<string[]>([])
   const [activeTag, setActiveTag] = useState<string | null>(null)
@@ -123,34 +124,20 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
       return
     }
     // move to next tag
-    const nextTag = tagOrder[nextIndex]
-    const posts = buildPostsForTag(nextTag)
-    // if next tag has no posts, skip forward until found or end
     let foundIndex = nextIndex
-    while (foundIndex < tagOrder.length && posts.length === 0) {
-      foundIndex++
-      if (foundIndex < tagOrder.length) {
-        const t = tagOrder[foundIndex]
-        const p = buildPostsForTag(t)
-        if (p.length > 0) {
-          setStoryPosts(p)
-          setStoryIndex(0)
-          setCurrentTagIndex(foundIndex)
-          return
-        }
+    while (foundIndex < tagOrder.length) {
+      const p = buildPostsForTag(tagOrder[foundIndex])
+      if (p.length > 0) {
+        setStoryPosts(p)
+        setStoryIndex(0)
+        setCurrentTagIndex(foundIndex)
+        return
       }
+      foundIndex++
     }
-    if (foundIndex >= tagOrder.length) {
-      setStoryOpen(false)
-      setCurrentTagIndex(null)
-      setTagOrder([])
-      return
-    }
-    // else set to the foundIndex posts
-    const nextPosts = buildPostsForTag(tagOrder[foundIndex])
-    setStoryPosts(nextPosts)
-    setStoryIndex(0)
-    setCurrentTagIndex(foundIndex)
+    setStoryOpen(false)
+    setCurrentTagIndex(null)
+    setTagOrder([])
   }
 
   return (
@@ -214,6 +201,15 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
             setTagOrder([])
           }}
           onFinish={handleTagFinish}
+          onOpenPost={(id) => {
+            // close viewer first, then navigate to post
+            setStoryOpen(false)
+            setCurrentTagIndex(null)
+            setTagOrder([])
+            // ensure id is number
+            const nid = typeof id === 'string' ? parseInt(id, 10) : id
+            if (!Number.isNaN(nid)) onSelectMemo(nid as number)
+          }}
         />
       )}
     </div>

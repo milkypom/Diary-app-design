@@ -18,9 +18,10 @@ type Props = {
   tag?: string;
   onClose?: () => void;
   onFinish?: () => void; // called when finishing all posts in this tag
+  onOpenPost?: (postId: string | number) => void; // navigate to a post
 };
 
-export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onFinish }: Props) {
+export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onFinish, onOpenPost }: Props) {
   const [index, setIndex] = useState(initialIndex);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<number | null>(null);
@@ -102,6 +103,8 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
           )}
           <div className="profile-meta">
             <div className="profile-name">{current?.authorName ?? 'My Diary'}</div>
+            {/* show tag name under profile */}
+            {tag && <div className="profile-tag">#{tag}</div>}
             {current?.date && <div className="profile-date">{current.date}</div>}
           </div>
         </div>
@@ -124,18 +127,29 @@ export default function StoryViewer({ posts, initialIndex = 0, tag, onClose, onF
 
       <div className="story-content">
         {current.imageUrl ? (
-          <img src={String(current.imageUrl)} alt="story" className="story-media" />
+          // image click -> next post
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+          <img
+            src={String(current.imageUrl)}
+            alt="story"
+            className="story-media"
+            onClick={goNext}
+          />
         ) : (
-          <div className="story-text">{current.content}</div>
+          <div className="story-text" onClick={() => { onOpenPost?.(current.id); onClose?.(); }}>{current.content}</div>
         )}
 
-        <div className="story-caption">
+        <div
+          className="story-caption"
+          // caption click -> open post
+          onClick={() => { onOpenPost?.(current.id); onClose?.(); }}
+        >
           {current.title && <div className="story-title">{current.title}</div>}
           {current.content && <div className="story-body">{current.content}</div>}
         </div>
 
-        <button className="nav-btn left" onClick={goPrev} aria-label="Previous">‹</button>
-        <button className="nav-btn right" onClick={goNext} aria-label="Next">›</button>
+        <button className="nav-btn left" onClick={(e) => { e.stopPropagation(); goPrev(); }} aria-label="Previous">‹</button>
+        <button className="nav-btn right" onClick={(e) => { e.stopPropagation(); goNext(); }} aria-label="Next">›</button>
       </div>
     </div>
   );

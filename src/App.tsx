@@ -60,6 +60,7 @@ export default function App() {
               onRefresh={refresh}
               selectedMemoId={selectedMemoId}
               onClearSelection={() => setSelectedMemoId(null)}
+              onSelectMemo={handleSelectMemo}
             />
           )}
           {page === "search" && (
