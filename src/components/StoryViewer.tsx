@@ -5,6 +5,10 @@ export type Post = {
   id: string | number;
   imageUrl?: string;
   content?: string;
+  title?: string;
+  authorName?: string;
+  avatarUrl?: string;
+  date?: string;
   durationMs?: number;
 };
 
@@ -75,25 +79,47 @@ export default function StoryViewer({ posts, initialIndex = 0, onClose }: Props)
       onTouchEnd={onTouchEnd}
     >
       <div className="story-top">
-        {posts.map((p, i) => (
-          <div key={String(p.id)} className={`progress ${i < index ? "done" : i === index ? "active" : ""}`}>
-            <div
-              className="bar"
-              style={{ width: i < index ? "100%" : i === index ? (paused ? "50%" : "0%") : "0%" }}
-            />
+        <div className="story-profile">
+          {current?.avatarUrl ? (
+            <img src={String(current.avatarUrl)} alt={current.authorName || 'Author'} className="profile-avatar" />
+          ) : (
+            <div className="profile-avatar placeholder">📝</div>
+          )}
+          <div className="profile-meta">
+            <div className="profile-name">{current?.authorName ?? 'My Diary'}</div>
+            {current?.date && <div className="profile-date">{current.date}</div>}
           </div>
-        ))}
+        </div>
+
+        <div className="progress-group">
+          {posts.map((p, i) => (
+            <div key={String(p.id)} className={`progress ${i < index ? "done" : i === index ? "active" : ""}`}>
+              <div
+                className="bar"
+                style={{ width: i < index ? "100%" : i === index ? (paused ? "50%" : "0%") : "0%" }}
+              />
+            </div>
+          ))}
+        </div>
+
         <button className="close-btn" onClick={onClose} aria-label="Close story">✕</button>
       </div>
 
       <div className="story-content">
         {current.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img src={String(current.imageUrl)} alt="story" className="story-media" />
         ) : (
           <div className="story-text">{current.content}</div>
         )}
+
+        <div className="story-caption">
+          {current.title && <div className="story-title">{current.title}</div>}
+          {current.content && <div className="story-body">{current.content}</div>}
+        </div>
+
         <div className="tap-zone left" onClick={goPrev} />
         <div className="tap-zone right" onClick={goNext} />
-      </div
-
+      </div>
+    </div>
+  );
+}
