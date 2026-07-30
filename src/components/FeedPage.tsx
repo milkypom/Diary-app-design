@@ -17,10 +17,14 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
   const [allTags, setAllTags] = useState<string[]>([])
   const [activeTag, setActiveTag] = useState<string | null>(null)
 
-  // story state
+  // story state & tag progression
   const [storyOpen, setStoryOpen] = useState(false)
   const [storyPosts, setStoryPosts] = useState<StoryPost[]>([])
   const [storyIndex, setStoryIndex] = useState(0)
+
+  // tag order + current tag pointer for "next-tag" progression
+  const [tagOrder, setTagOrder] = useState<string[]>([])
+  const [currentTagIndex, setCurrentTagIndex] = useState<number | null>(null)
 
   useEffect(() => {
     const all = getMemos()
@@ -38,11 +42,9 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
 
   useEffect(() => {
     if (selectedMemoId) {
-      console.log('selectedMemoId:', selectedMemoId)
       setActiveTag(null)
       setTimeout(() => {
         const element = document.getElementById(`memo-${selectedMemoId}`)
-        console.log('element found:', element)
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' })
           element.classList.add('ring-2', 'ring-[#c87941]', 'ring-offset-2')
@@ -55,25 +57,100 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
     }
   }, [selectedMemoId, onClearSelection])
 
-  const handleTagClick = (tag: string) => {
-    // Build story posts for the tag
-    const posts = getMemos()
+  // helper: build StoryPost[] for a tag
+  function buildPostsForTag(tag: string): StoryPost[] {
+    return getMemos()
       .filter(m => !m.deleted && m.tags?.includes(tag))
       .sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime())
       .map(m => ({
         id: m.id,
         imageUrl: m.images?.[0] ?? undefined,
-        content: m.title || m.content || undefined,
+        title: m.title ?? undefined,
+        content: m.content ?? undefined,
+        authorName: (m as any).authorName ?? 'My Diary', // 메모에 author 필드가 있으면 사용
+        avatarUrl: (m as any).avatarUrl ?? undefined,
+        date: m.date || m.createdAt,
+        durationMs: 3500,
       }))
+  }
 
-    if (posts.length === 0) {
-      setActiveTag(prev => (prev === tag ? null : tag))
+  // open story viewer starting at the clicked tag; also prepare tagOrder and currentTagIndex
+  const handleTagClick = (tag: string) => {
+    const tags = allTags // use current allTags order; you can reorder if desired
+    const startIndex = tags.indexOf(tag)
+    if (startIndex === -1) {
+      // fallback: single-tag behavior
+      const posts = buildPostsForTag(tag)
+      if (posts.length === 0) {
+        setActiveTag(prev => (prev === tag ? null : tag))
+        return
+      }
+      setStoryPosts(posts)
+      setStoryIndex(0)
+      setStoryOpen(true)
+      setTagOrder([tag])
+      setCurrentTagIndex(0)
       return
     }
 
+    // prepare order starting from the clicked tag (optional: you can keep original order)
+    const ordered = tags.slice(startIndex).concat(tags.slice(0, startIndex))
+    setTagOrder(ordered)
+    setCurrentTagIndex(0) // pointer into ordered (0 means ordered[0] is the clicked tag)
+    const posts = buildPostsForTag(ordered[0])
+    if (posts.length === 0) {
+      // if no posts for this tag, just toggle filter instead
+      setActiveTag(prev => (prev === tag ? null : tag))
+      return
+    }
     setStoryPosts(posts)
     setStoryIndex(0)
     setStoryOpen(true)
+  }
+
+  // called when StoryViewer finishes all posts in the current tag
+  function handleTagFinish() {
+    if (currentTagIndex == null) {
+      setStoryOpen(false)
+      return
+    }
+    const nextIndex = currentTagIndex + 1
+    if (nextIndex >= tagOrder.length) {
+      // no more tags in this sequence
+      setStoryOpen(false)
+      setCurrentTagIndex(null)
+      setTagOrder([])
+      return
+    }
+    // move to next tag
+    const nextTag = tagOrder[nextIndex]
+    const posts = buildPostsForTag(nextTag)
+    // if next tag has no posts, skip forward until found or end
+    let foundIndex = nextIndex
+    while (foundIndex < tagOrder.length && posts.length === 0) {
+      foundIndex++
+      if (foundIndex < tagOrder.length) {
+        const t = tagOrder[foundIndex]
+        const p = buildPostsForTag(t)
+        if (p.length > 0) {
+          setStoryPosts(p)
+          setStoryIndex(0)
+          setCurrentTagIndex(foundIndex)
+          return
+        }
+      }
+    }
+    if (foundIndex >= tagOrder.length) {
+      setStoryOpen(false)
+      setCurrentTagIndex(null)
+      setTagOrder([])
+      return
+    }
+    // else set to the foundIndex posts
+    const nextPosts = buildPostsForTag(tagOrder[foundIndex])
+    setStoryPosts(nextPosts)
+    setStoryIndex(0)
+    setCurrentTagIndex(foundIndex)
   }
 
   return (
@@ -130,22 +207,15 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
         <StoryViewer
           posts={storyPosts}
           initialIndex={storyIndex}
-          onClose={() => setStoryOpen(false)}
+          tag={tagOrder[currentTagIndex ?? 0] ?? undefined}
+          onClose={() => {
+            setStoryOpen(false)
+            setCurrentTagIndex(null)
+            setTagOrder([])
+          }}
+          onFinish={handleTagFinish}
         />
       )}
     </div>
   )
 }
-const posts = getMemos()
-  .filter(m => !m.deleted && m.tags?.includes(tag))
-  .sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime())
-  .map(m => ({
-    id: m.id,
-    imageUrl: m.images?.[0] ?? undefined,
-    title: m.title ?? undefined,
-    content: m.content ?? undefined,
-    authorName: m.authorName ?? 'My Diary', // 메모에 author 필드가 없다면 기본값 사용
-    avatarUrl: m.avatarUrl ?? undefined,    // 없다면 기본 아이콘(placeholder) 사용
-    date: m.date || m.createdAt,
-    durationMs: 3500, // 필요 시 per-post duration
-  }))
