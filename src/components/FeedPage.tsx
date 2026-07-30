@@ -36,6 +36,7 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
           new Date(a.createdAt || a.date).getTime()
       )
 
+    // remove falsy/empty tags when building the tag list
     const tags = Array.from(new Set(all.flatMap(m => m.tags || []).filter(Boolean)))
     setAllTags(tags)
     setMemos(activeTag ? all.filter(m => m.tags?.includes(activeTag)) : all)
