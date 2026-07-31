@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+﻿import React, { useEffect, useRef, useState } from "react";
 import "./StoryViewer.css";
 
 export type Post = {
@@ -19,7 +19,7 @@ type Props = {
   onClose?: () => void;
   onFinish?: () => void;
   onOpenPost?: (postId: string | number) => void;
-  onPrevBoundary?: () => void; // <-- 추가: 첫 게시물에서 이전 요청시 부모로 알림
+  onPrevBoundary?: () => void; // notify parent when requesting previous at first post
 };
 
 export default function StoryViewer({
@@ -92,7 +92,7 @@ export default function StoryViewer({
     if (!posts || posts.length === 0) return;
     if (index > 0) setIndex((i) => i - 1);
     else {
-      // 첫 게시물에서 이전 요청 → 부모에게 알림 (이전 태그로 이동 등)
+      // at first post => notify parent so it can switch to previous tag
       onPrevBoundary?.();
     }
   }

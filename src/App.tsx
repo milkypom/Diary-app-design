@@ -5,6 +5,7 @@ import FeedPage from "./components/FeedPage"
 import SearchPage from "./components/SearchPage"
 import MyPage from "./components/MyPage"
 import BookmarkPage from "./components/BookmarkPage"
+import SettingsPage from "./components/SettingsPage"
 import EditorModal from "./components/EditorModal"
 import BottomNav from "./components/BottomNav"
 import PostDetailPage from "./components/PostDetailPage"
@@ -16,6 +17,7 @@ const PAGE_LABELS: Record<Page, string> = {
   search: "Search",
   my: "My Page",
   bookmark: "Saved",
+  settings: "Settings",
 }
 
 export default function App() {
@@ -24,6 +26,7 @@ export default function App() {
   const [selectedMemoId, setSelectedMemoId] = useState<number | null>(null)
   // undefined = editor closed, null = new entry, Memo = editing
   const [editing, setEditing] = useState<Memo | null | undefined>(undefined)
+  const [previousPage, setPreviousPage] = useState<Page>("home")
 
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), [])
   const openNew = () => setEditing(null)
@@ -34,34 +37,67 @@ export default function App() {
     refresh()
   }
   const handleSelectMemo = (id: number) => {
+    setPreviousPage(page)
     setSelectedMemoId(id)
-    setPage("home")
+  }
+
+  const handleSettingsClick = () => {
+    setPreviousPage(page)
+    setPage("settings")
+  }
+
+  const handleBackFromSettings = () => {
+    setPage(previousPage)
   }
 
   return (
     <div className="min-h-screen bg-[#e8e3dd] flex justify-center">
       <div className="w-full max-w-[480px] min-h-screen bg-white relative shadow-[0_0_40px_rgba(0,0,0,0.06)]">
         {/* Sticky header */}
-        <header className="sticky top-0 z-30 flex items-center px-5 py-4 bg-white/95 backdrop-blur-sm border-b border-[#f0ede8]">
-          <h1
-            className={`font-serif text-[22px] font-bold text-[#1a1a1a] leading-none ${
-              page === "home" ? "italic" : "not-italic text-[19px]"
-            }`}
-          >
-            {PAGE_LABELS[page]}
-          </h1>
+        <header className="sticky top-0 z-30 flex items-center justify-between px-5 py-4 bg-white/95 backdrop-blur-sm border-b border-[#f0ede8]">
+          <div className="flex items-center gap-3">
+            {page === "settings" && (
+              <button
+                onClick={handleBackFromSettings}
+                className="w-8 h-8 flex items-center justify-center text-[#bbb] hover:text-[#555] transition-colors text-lg"
+                aria-label="Back"
+              >
+                ‹
+              </button>
+            )}
+            <h1
+              className={`font-serif text-[22px] font-bold text-[#1a1a1a] leading-none ${
+                page === "home" ? "italic" : "not-italic text-[19px]"
+              }`}
+            >
+              {PAGE_LABELS[page]}
+            </h1>
+          </div>
+          {page === "my" && (
+            <button
+              onClick={handleSettingsClick}
+              className="w-8 h-8 flex items-center justify-center text-[#bbb] hover:text-[#555] transition-colors text-lg"
+              aria-label="Settings"
+            >
+              ⚙️
+            </button>
+          )}
         </header>
 
         {/* Page content */}
         <main className="pb-16">
-          {page === "home" && selectedMemoId ? (
+          {selectedMemoId ? (
             <PostDetailPage
               memo={getMemo(selectedMemoId)}
-              onBack={() => setSelectedMemoId(null)}
+              onBack={() => {
+                setSelectedMemoId(null)
+                setPage(previousPage)
+              }}
               onEdit={openEdit}
               onDelete={(id) => {
                 deleteMemo(id)
                 setSelectedMemoId(null)
+                setPage(previousPage)
                 refresh()
               }}
               onRefresh={refresh}
@@ -83,6 +119,8 @@ export default function App() {
               onEdit={openEdit}
               onSelectMemo={handleSelectMemo}
             />
+          ) : page === "settings" ? (
+            <SettingsPage refreshKey={refreshKey} onRefresh={refresh} />
           ) : (
             <BookmarkPage
               refreshKey={refreshKey}

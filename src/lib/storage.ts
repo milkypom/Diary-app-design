@@ -10,6 +10,31 @@ export interface Profile {
   avatarEmoji: string
   avatarColor: string
 }
+ 
+export function getTagListStyle(): TagListStyle {
+  try {
+    const data = localStorage.getItem(SETTINGS_KEY)
+    if (data) {
+      const settings = JSON.parse(data)
+      return settings.tagListStyle || 'circle'
+    }
+  } catch {
+    // ignore error
+  }
+  return 'circle'
+}
+ 
+export function saveTagListStyle(tagListStyle: TagListStyle): boolean {
+  try {
+    const currentSettings = localStorage.getItem(SETTINGS_KEY)
+    const settings = currentSettings ? JSON.parse(currentSettings) : {}
+    settings.tagListStyle = tagListStyle
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+    return true
+  } catch {
+    return false
+  }
+}
 
 export function getProfile(): Profile {
   try {
@@ -138,6 +163,56 @@ export function searchMemos(keyword: string): Memo[] {
       m.tags?.some(t => t.toLowerCase().includes(lower))
     )
   })
+}
+
+export function getAllTags(): string[] {
+  const memos = getMemos()
+  const tags = new Set<string>()
+  memos.forEach(m => {
+    if (m.tags) {
+      m.tags.forEach(t => {
+        if (t) tags.add(t)
+      })
+    }
+  })
+  return Array.from(tags).sort()
+}
+
+export function renameTag(oldTag: string, newTag: string): boolean {
+  if (!oldTag.trim() || !newTag.trim()) return false
+  const cleanOldTag = oldTag.trim()
+  const cleanNewTag = newTag.trim()
+  if (cleanOldTag === cleanNewTag) return false
+
+  const memos = getMemos()
+  let changed = false
+  memos.forEach(memo => {
+    if (memo.tags && memo.tags.includes(cleanOldTag)) {
+      memo.tags = memo.tags.map(t => t === cleanOldTag ? cleanNewTag : t)
+      changed = true
+    }
+  })
+  if (changed) {
+    saveMemos(memos)
+  }
+  return changed
+}
+
+export function deleteTag(tag: string): boolean {
+  if (!tag.trim()) return false
+  const cleanTag = tag.trim()
+  const memos = getMemos()
+  let changed = false
+  memos.forEach(memo => {
+    if (memo.tags && memo.tags.includes(cleanTag)) {
+      memo.tags = memo.tags.filter(t => t !== cleanTag)
+      changed = true
+    }
+  })
+  if (changed) {
+    saveMemos(memos)
+  }
+  return changed
 }
 
 export function initSampleData(): void {
