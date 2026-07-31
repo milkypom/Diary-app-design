@@ -8,6 +8,13 @@ import {
   getProfile,
 } from "../lib/storage"
 
+const WEATHER_ICON: Record<string, string> = {
+  sunny: '☀️',
+  cloudy: '☁️',
+  rainy: '🌧️',
+  snowy: '❄️',
+}
+
 interface Props {
   memo: Memo | null
   onBack: () => void
@@ -173,11 +180,16 @@ export default function PostDetailPage({
       )}
 
       <div className="px-4 pb-6 pt-4">
-        {memo.title && (
-          <h1 className="text-[20px] font-semibold italic text-[#1a1a1a] mb-2">
-            {memo.title}
-          </h1>
-        )}
+        <div className="flex items-center gap-2 mb-2">
+          {memo.title && (
+            <h1 className="text-[20px] font-semibold italic text-[#1a1a1a]">
+              {memo.title}
+            </h1>
+          )}
+          {memo.weather && (
+            <span className="text-[18px]">{WEATHER_ICON[memo.weather]}</span>
+          )}
+        </div>
 
         <div className="text-[14px] text-[#333] leading-relaxed whitespace-pre-wrap mb-3">
           {memo.content}
@@ -217,18 +229,29 @@ export default function PostDetailPage({
                   key={c.id}
                   className="flex items-start justify-between gap-3"
                 >
-                  <div>
-                    <div className="text-[13px] text-[#1a1a1a] font-medium">
-                      Me{" "}
-                      <span className="text-[11px] text-[#bbb] ml-2">
-                        {new Date(c.createdAt).toLocaleString()}
-                      </span>
+                  <div className="flex items-start gap-2 flex-1">
+                    <div
+                      className={`w-8 h-8 rounded-full bg-gradient-to-br ${profile.avatarColor} flex items-center justify-center text-[14px] flex-shrink-0`}
+                    >
+                      {profile.avatar ? (
+                        <img src={profile.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        profile.avatarEmoji
+                      )}
                     </div>
-                    <div className="text-[13px] text-[#555] mt-1">{c.text}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] text-[#1a1a1a] font-medium">
+                        {profile.name}{" "}
+                        <span className="text-[11px] text-[#bbb] ml-2">
+                          {new Date(c.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="text-[13px] text-[#555] mt-1">{c.text}</div>
+                    </div>
                   </div>
                   <button
                     onClick={() => handleDeleteComment(c.id)}
-                    className="text-[12px] text-[#ccc] hover:text-red-400"
+                    className="text-[12px] text-[#ccc] hover:text-red-400 flex-shrink-0"
                   >
                     ×
                   </button>
@@ -238,6 +261,15 @@ export default function PostDetailPage({
           )}
 
           <div className="flex items-center gap-3 mt-4">
+            <div
+              className={`w-8 h-8 rounded-full bg-gradient-to-br ${profile.avatarColor} flex items-center justify-center text-[14px] flex-shrink-0`}
+            >
+              {profile.avatar ? (
+                <img src={profile.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+              ) : (
+                profile.avatarEmoji
+              )}
+            </div>
             <input
               ref={inputRef}
               type="text"

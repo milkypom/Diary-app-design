@@ -28,6 +28,9 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [profile, setProfile] = useState(getProfile())
   const [showProfileEdit, setShowProfileEdit] = useState(false)
+  const [showMonthPicker, setShowMonthPicker] = useState(false)
+  const [showYearPicker, setShowYearPicker] = useState(false)
+  const [yearInput, setYearInput] = useState(calYear.toString())
 
   useEffect(() => {
     const all = getMemos()
@@ -40,6 +43,10 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
     setMemos(all)
     setProfile(getProfile())
   }, [refreshKey])
+
+  useEffect(() => {
+    setYearInput(calYear.toString())
+  }, [calYear])
 
   const totalWords = memos.reduce((acc, m) => acc + (m.content?.length || 0), 0)
   const tagCount = new Set(memos.flatMap(m => m.tags || [])).size
@@ -61,7 +68,10 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
   const prevMonth = () => {
     setSelectedDate(null)
     if (calMonth === 0) {
-      setCalYear(y => y - 1)
+      setCalYear(y => {
+        setYearInput((y - 1).toString())
+        return y - 1
+      })
       setCalMonth(11)
     } else {
       setCalMonth(m => m - 1)
@@ -70,7 +80,10 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
   const nextMonth = () => {
     setSelectedDate(null)
     if (calMonth === 11) {
-      setCalYear(y => y + 1)
+      setCalYear(y => {
+        setYearInput((y + 1).toString())
+        return y + 1
+      })
       setCalMonth(0)
     } else {
       setCalMonth(m => m + 1)
@@ -102,9 +115,6 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
           </div>
         </button>
         <div className="flex items-center gap-4">
-          <button className="w-8 h-8 flex items-center justify-center text-[#bbb] hover:text-[#555] transition-colors text-lg">
-            ⚙️
-          </button>
           <div className="flex gap-6 text-center">
             <div>
               <p className="text-[18px] font-bold text-[#1a1a1a] leading-none">{memos.length}</p>
@@ -192,10 +202,24 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
             >
               ‹
             </button>
-            <p className="font-semibold text-[15px] text-[#1a1a1a]">
-              {calYear} ·{' '}
-              {new Date(calYear, calMonth).toLocaleString('en-US', { month: 'long' })}
-            </p>
+            <div className="flex items-center gap-1">
+              <button
+                className="font-semibold text-[15px] text-[#1a1a1a] hover:text-[#c87941] transition-colors"
+                onClick={() => {
+                  setYearInput(calYear.toString())
+                  setShowYearPicker(true)
+                }}
+              >
+                {calYear}
+              </button>
+              <span className="text-[#ddd]">·</span>
+              <button
+                className="font-semibold text-[15px] text-[#1a1a1a] hover:text-[#c87941] transition-colors"
+                onClick={() => setShowMonthPicker(true)}
+              >
+                {new Date(calYear, calMonth).toLocaleString('en-US', { month: 'long' })}
+              </button>
+            </div>
             <button
               className="w-9 h-9 rounded-full border border-[#eee] flex items-center justify-center text-[#777] hover:bg-[#f5f0eb] transition-colors text-lg"
               onClick={nextMonth}
@@ -249,10 +273,12 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
                   {day}
                   {dayMemos.length > 0 && (
                     <span
-                      className={`absolute bottom-1 w-1 h-1 rounded-full ${
-                        isSelected ? 'bg-white/70' : 'bg-[#c87941]'
+                      className={`absolute bottom-1 right-1 text-[10px] font-bold ${
+                        isSelected ? 'text-white/90' : 'text-[#c87941]'
                       }`}
-                    />
+                    >
+                      +{dayMemos.length}
+                    </span>
                   )}
                 </button>
               )
@@ -316,6 +342,81 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
           }}
           onClose={() => setShowProfileEdit(false)}
         />
+      )}
+
+      {/* Month picker modal */}
+      {showMonthPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-5">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
+            onClick={() => setShowMonthPicker(false)}
+          />
+          <div className="relative w-full max-w-sm bg-white rounded-2xl p-6 shadow-xl">
+            <h3 className="text-[18px] font-semibold text-[#1a1a1a] mb-4">Select Month</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {Array.from({ length: 12 }, (_, i) => i).map(month => {
+                const isSelected = month === calMonth
+                return (
+                  <button
+                    key={month}
+                    onClick={() => {
+                      setCalMonth(month)
+                      setShowMonthPicker(false)
+                    }}
+                    className={`py-3 px-4 rounded-xl text-[13px] font-medium transition-all ${
+                      isSelected
+                        ? 'bg-[#1a1a1a] text-white'
+                        : 'bg-[#faf9f7] text-[#1a1a1a] hover:bg-[#f0ede8]'
+                    }`}
+                  >
+                    {new Date(calYear, month).toLocaleString('en-US', { month: 'short' })}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Year picker modal */}
+      {showYearPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-5">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
+            onClick={() => setShowYearPicker(false)}
+          />
+          <div className="relative w-full max-w-sm bg-white rounded-2xl p-6 shadow-xl">
+            <h3 className="text-[18px] font-semibold text-[#1a1a1a] mb-4">Select Year</h3>
+            <input
+              type="number"
+              value={yearInput}
+              onChange={(e) => setYearInput(e.target.value)}
+              className="w-full px-4 py-3 border border-[#e8e3dd] rounded-xl bg-[#faf9f7] text-[15px] outline-none focus:border-[#bbb] focus:bg-white transition-colors mb-4"
+              placeholder="Enter year"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowYearPicker(false)}
+                className="flex-1 px-4 py-3 bg-[#faf9f7] text-[#1a1a1a] text-[14px] font-medium rounded-xl hover:bg-[#f0ede8] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const year = parseInt(yearInput)
+                  if (year && year > 1900 && year < 2100) {
+                    setCalYear(year)
+                    setShowYearPicker(false)
+                  }
+                }}
+                className="flex-1 px-4 py-3 bg-[#1a1a1a] text-white text-[14px] font-medium rounded-xl hover:bg-[#333] transition-colors"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -270,7 +270,7 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
           onClick={handleBookmark}
           aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark'}
         >
-          {bookmarked ? '★' : '☆'}
+          {bookmarked ? '🔖' : '📑'}
         </button>
       </div>
 
@@ -348,12 +348,18 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
                 <ul className="space-y-4">
                   {comments.map(c => (
                     <li key={c.id} className="flex items-start gap-3 group">
-                      <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5 bg-gradient-to-br from-[#d4c4b8] to-[#b8a898] flex items-end justify-center">
-                        <span className="text-[20px] leading-none translate-y-1 select-none">🧑</span>
+                      <div
+                        className={`w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5 bg-gradient-to-br ${profile.avatarColor} flex items-center justify-center`}
+                      >
+                        {profile.avatar ? (
+                          <img src={profile.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                          <span className="text-[18px]">{profile.avatarEmoji}</span>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline gap-2">
-                          <span className="text-[13px] font-semibold text-[#1a1a1a]">Me</span>
+                          <span className="text-[13px] font-semibold text-[#1a1a1a]">{profile.name}</span>
                           <span className="text-[11px] text-[#bbb]">{commentRelativeTime(c.createdAt)}</span>
                         </div>
                         <p className="text-[13px] text-[#555] leading-relaxed mt-0.5">{c.text}</p>
@@ -373,8 +379,14 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
 
             {/* Comment input */}
             <div className="flex items-center gap-3 px-4 py-3 border-t border-[#f0ede8] bg-white flex-shrink-0">
-              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-[#d4c4b8] to-[#b8a898] flex items-end justify-center">
-                <span className="text-[20px] leading-none translate-y-1 select-none">🧑</span>
+              <div
+                className={`w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br ${profile.avatarColor} flex items-center justify-center`}
+              >
+                {profile.avatar ? (
+                  <img src={profile.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  <span className="text-[18px]">{profile.avatarEmoji}</span>
+                )}
               </div>
               <input
                 ref={inputRef}

@@ -14,12 +14,14 @@ export default function BottomNav({ current, onChange, onNew }: Props) {
         onClick={() => onChange('home')}
         icon="⌂"
         label="Home"
+        imageSrc={current === 'home' ? '/img/home_on.png' : '/img/home_off.png'}
       />
       <NavBtn
         active={current === 'search'}
         onClick={() => onChange('search')}
         icon="⌕"
         label="Search"
+        imageSrc="/img/search.png"
       />
 
       {/* Compose button */}
@@ -38,13 +40,15 @@ export default function BottomNav({ current, onChange, onNew }: Props) {
         onClick={() => onChange('my')}
         icon="👤"
         label="My"
+        imageSrc={current === 'my' ? '/img/my_on.png' : '/img/my_off.png'}
       />
       <NavBtn
         active={current === 'bookmark'}
         onClick={() => onChange('bookmark')}
-        icon={current === 'bookmark' ? '★' : '☆'}
+        icon="🔖"
         label="Saved"
         activeColor
+        imageSrc={current === 'bookmark' ? '/img/saved_on.png' : '/img/saved_off.png'}
       />
     </nav>
   )
@@ -56,12 +60,14 @@ function NavBtn({
   icon,
   label,
   activeColor,
+  imageSrc,
 }: {
   active: boolean
   onClick: () => void
   icon: string
   label: string
   activeColor?: boolean
+  imageSrc?: string
 }) {
   return (
     <button
@@ -74,7 +80,11 @@ function NavBtn({
       }`}
       onClick={onClick}
     >
-      <span className="text-[20px] leading-none select-none">{icon}</span>
+      {imageSrc ? (
+        <img src={imageSrc} alt={label} className="w-6 h-6 object-contain" />
+      ) : (
+        <span className="text-[20px] leading-none select-none">{icon}</span>
+      )}
       <span className="text-[9px] font-medium">{label}</span>
     </button>
   )

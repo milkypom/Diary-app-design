@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { getMemos } from '../lib/storage'
-import type { Memo } from '../lib/types'
+import { getMemos, getTagListStyle } from '../lib/storage'
+import type { Memo, TagListStyle } from '../lib/types'
 import PostCard from './PostCard'
 import StoryViewer, { Post as StoryPost } from './StoryViewer'
 
@@ -17,6 +17,7 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
   const [memos, setMemos] = useState<Memo[]>([])
   const [allTags, setAllTags] = useState<string[]>([])
   const [activeTag, setActiveTag] = useState<string | null>(null)
+  const [tagListStyle, setTagListStyle] = useState<TagListStyle>('circle')
 
   // story state & tag progression
   const [storyOpen, setStoryOpen] = useState(false)
@@ -40,6 +41,7 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
     const tags = Array.from(new Set(all.flatMap(m => m.tags || []).filter(Boolean)))
     setAllTags(tags)
     setMemos(activeTag ? all.filter(m => m.tags?.includes(activeTag)) : all)
+    setTagListStyle(getTagListStyle())
   }, [refreshKey, activeTag])
 
   useEffect(() => {
@@ -159,7 +161,9 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
               <button
                 key={tag}
                 onClick={() => handleTagClick(tag)}
-                className={`flex-shrink-0 w-16 h-16 rounded-full text-[11px] font-medium border-2 transition-all flex flex-col items-center justify-center relative overflow-hidden ${
+                className={`flex-shrink-0 ${
+                  tagListStyle === 'folder' ? 'w-14 h-14 rounded-xl' : 'w-16 h-16 rounded-full'
+                } text-[11px] font-medium border-2 transition-all flex flex-col items-center justify-center relative overflow-hidden ${
                   activeTag === tag
                     ? 'border-[#1a1a1a] shadow-md'
                     : 'border-[#e8e3dd] hover:border-[#d0c9c0]'
@@ -167,15 +171,20 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
               >
                 {latestImage && (
                   <>
-                    <img 
-                      src={latestImage} 
-                      alt="" 
+                    <img
+                      src={latestImage}
+                      alt=""
                       className="absolute inset-0 w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black/30" />
                   </>
                 )}
-                <span className={`relative z-10 font-medium px-1 ${latestImage ? 'text-white' : ''}`}>#{tag}</span>
+                                {tagListStyle === 'folder' && !latestImage && (
+                  <img src="/img/folder01.png" alt="" className="absolute inset-0 w-full h-full object-contain p-2" />
+                )}
+                <span className={`relative z-10 font-medium px-1 ${latestImage ? 'text-white' : ''}`}>
+                  #{tag}
+                </span>
               </button>
             )
           })}
