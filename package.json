@@ -25,3 +25,8 @@
     "vite": "^8.0.0"
   }
 }
+"scripts": {
+  "build": "vite build",
+  "predeploy": "npm run build",
+  "deploy": "npx gh-pages -d dist"
+}
