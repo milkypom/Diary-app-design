@@ -28,10 +28,10 @@ export default function BookmarkPage({ refreshKey, onEdit, onRefresh, onSelectMe
     <div>
       {memos.length === 0 ? (
         <div className="flex flex-col items-center py-20 gap-3">
-          <span className="text-5xl opacity-20">☆</span>
+          <span className="text-5xl opacity-20">🔖</span>
           <p className="text-[14px] text-[#9a9a9a]">No saved entries yet</p>
           <p className="text-[12px] text-[#bbb]">
-            Tap ☆ on any entry to save it
+            Tap 📑 on any entry to save it
           </p>
         </div>
       ) : (
