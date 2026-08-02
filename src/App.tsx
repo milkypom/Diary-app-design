@@ -1,11 +1,12 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import type { Memo, Page } from "./lib/types"
-import { initSampleData, getMemo, deleteMemo } from "./lib/storage"
+import { initSampleData, getMemo, deleteMemo, getTheme, getEffectiveTheme } from "./lib/storage"
 import FeedPage from "./components/FeedPage"
 import SearchPage from "./components/SearchPage"
 import MyPage from "./components/MyPage"
 import BookmarkPage from "./components/BookmarkPage"
 import SettingsPage from "./components/SettingsPage"
+import TagEditPage from "./components/TagEditPage"
 import EditorModal from "./components/EditorModal"
 import BottomNav from "./components/BottomNav"
 import PostDetailPage from "./components/PostDetailPage"
@@ -13,11 +14,12 @@ import PostDetailPage from "./components/PostDetailPage"
 initSampleData()
 
 const PAGE_LABELS: Record<Page, string> = {
-  home: "DayLOG",
+  home: "CONTACT.",
   search: "Search",
   my: "My Page",
   bookmark: "Saved",
   settings: "Settings",
+  tagEdit: "Edit Tags",
 }
 
 export default function App() {
@@ -26,7 +28,37 @@ export default function App() {
   const [selectedMemoId, setSelectedMemoId] = useState<number | null>(null)
   // undefined = editor closed, null = new entry, Memo = editing
   const [editing, setEditing] = useState<Memo | null | undefined>(undefined)
-  const [previousPage, setPreviousPage] = useState<Page>("home")
+  const [pageStack, setPageStack] = useState<Page[]>(["home"])
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+
+  // Apply theme
+  useEffect(() => {
+    const savedTheme = getTheme()
+    const effectiveTheme = savedTheme === 'auto' ? getEffectiveTheme() : savedTheme
+    setTheme(effectiveTheme)
+    
+    if (effectiveTheme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+
+    // Listen for system theme changes when in auto mode
+    if (savedTheme === 'auto') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      const handleChange = (e: MediaQueryListEvent) => {
+        const newTheme = e.matches ? 'dark' : 'light'
+        setTheme(newTheme)
+        if (newTheme === 'dark') {
+          document.documentElement.classList.add('dark')
+        } else {
+          document.documentElement.classList.remove('dark')
+        }
+      }
+      mediaQuery.addEventListener('change', handleChange)
+      return () => mediaQuery.removeEventListener('change', handleChange)
+    }
+  }, [refreshKey])
 
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), [])
   const openNew = () => setEditing(null)
@@ -37,37 +69,61 @@ export default function App() {
     refresh()
   }
   const handleSelectMemo = (id: number) => {
-    setPreviousPage(page)
+    setPageStack([...pageStack, page])
     setSelectedMemoId(id)
   }
 
+  const handlePageChange = (newPage: Page) => {
+    setSelectedMemoId(null)
+    setPageStack([newPage])
+    setPage(newPage)
+  }
+
   const handleSettingsClick = () => {
-    setPreviousPage(page)
+    setPageStack([...pageStack, "settings"])
     setPage("settings")
   }
 
   const handleBackFromSettings = () => {
+    const newStack = [...pageStack]
+    newStack.pop()
+    const previousPage = newStack[newStack.length - 1] || "home"
+    setPageStack(newStack)
+    setPage(previousPage)
+  }
+
+  const handleTagEditClick = () => {
+    setPageStack([...pageStack, "tagEdit"])
+    setPage("tagEdit")
+  }
+
+  const handleBackFromTagEdit = () => {
+    const newStack = [...pageStack]
+    newStack.pop()
+    const previousPage = newStack[newStack.length - 1] || "home"
+    setPageStack(newStack)
     setPage(previousPage)
   }
 
   return (
-    <div className="min-h-screen bg-[#e8e3dd] flex justify-center">
-      <div className="w-full max-w-[480px] min-h-screen bg-white relative shadow-[0_0_40px_rgba(0,0,0,0.06)]">
+    <div className={`min-h-screen flex justify-center ${theme === 'dark' ? 'bg-[#1a1a1a]' : 'bg-[#e8e3dd]'}`}>
+      <div className={`w-full max-w-[480px] min-h-screen relative shadow-[0_0_40px_rgba(0,0,0,0.06)] ${theme === 'dark' ? 'bg-[#2d2d2d]' : 'bg-white'}`}>
         {/* Sticky header */}
-        <header className="sticky top-0 z-30 flex items-center justify-between px-5 py-4 bg-white/95 backdrop-blur-sm border-b border-[#f0ede8]">
+        {!selectedMemoId && (
+          <header className={`sticky top-0 z-30 flex items-center justify-between px-5 py-4 backdrop-blur-sm border-b ${theme === 'dark' ? 'bg-[#2d2d2d]/95 border-[#3d3d3d]' : 'bg-white/95 border-[#f0ede8]'}`}>
           <div className="flex items-center gap-3">
-            {page === "settings" && (
+            {(page === "settings" || page === "tagEdit") && (
               <button
-                onClick={handleBackFromSettings}
-                className="w-8 h-8 flex items-center justify-center text-[#bbb] hover:text-[#555] transition-colors text-lg"
+                onClick={page === "settings" ? handleBackFromSettings : handleBackFromTagEdit}
+                className={`w-8 h-8 flex items-center justify-center transition-colors text-lg ${theme === 'dark' ? 'text-[#a0a0a0] hover:text-[#f5f5f5]' : 'text-[#bbb] hover:text-[#555]'}`}
                 aria-label="Back"
               >
                 ‹
               </button>
             )}
             <h1
-              className={`font-serif text-[22px] font-bold text-[#1a1a1a] leading-none ${
-                page === "home" ? "italic" : "not-italic text-[19px]"
+              className={`font-sans text-[19px] font-bold leading-none not-italic ${
+                theme === 'dark' ? 'text-[#f5f5f5]' : 'text-[#1a1a1a]'
               }`}
             >
               {PAGE_LABELS[page]}
@@ -76,28 +132,30 @@ export default function App() {
           {page === "my" && (
             <button
               onClick={handleSettingsClick}
-              className="w-8 h-8 flex items-center justify-center text-[#bbb] hover:text-[#555] transition-colors text-lg"
+              className={`w-8 h-8 flex items-center justify-center transition-colors text-lg ${theme === 'dark' ? 'text-[#a0a0a0] hover:text-[#f5f5f5]' : 'text-[#bbb] hover:text-[#555]'}`}
               aria-label="Settings"
             >
               ⚙️
             </button>
           )}
         </header>
+        )}
 
         {/* Page content */}
         <main className="pb-16">
           {selectedMemoId ? (
             <PostDetailPage
               memo={getMemo(selectedMemoId)}
+              currentPage={pageStack[pageStack.length - 1] || "home"}
               onBack={() => {
                 setSelectedMemoId(null)
-                setPage(previousPage)
+                setPage(pageStack[pageStack.length - 1] || "home")
               }}
               onEdit={openEdit}
               onDelete={(id) => {
                 deleteMemo(id)
                 setSelectedMemoId(null)
-                setPage(previousPage)
+                setPage(pageStack[pageStack.length - 1] || "home")
                 refresh()
               }}
               onRefresh={refresh}
@@ -110,9 +168,10 @@ export default function App() {
               selectedMemoId={selectedMemoId}
               onClearSelection={() => setSelectedMemoId(null)}
               onSelectMemo={handleSelectMemo}
+              onTagEditClick={handleTagEditClick}
             />
           ) : page === "search" ? (
-            <SearchPage onEdit={openEdit} onRefresh={refresh} />
+            <SearchPage onEdit={openEdit} onRefresh={refresh} onSelectMemo={handleSelectMemo} />
           ) : page === "my" ? (
             <MyPage
               refreshKey={refreshKey}
@@ -120,7 +179,9 @@ export default function App() {
               onSelectMemo={handleSelectMemo}
             />
           ) : page === "settings" ? (
-            <SettingsPage refreshKey={refreshKey} onRefresh={refresh} />
+            <SettingsPage refreshKey={refreshKey} onRefresh={refresh} onTagEditClick={handleTagEditClick} />
+          ) : page === "tagEdit" ? (
+            <TagEditPage refreshKey={refreshKey} onRefresh={refresh} />
           ) : (
             <BookmarkPage
               refreshKey={refreshKey}
@@ -131,7 +192,7 @@ export default function App() {
         </main>
 
         {/* Bottom navigation */}
-        <BottomNav current={page} onChange={setPage} onNew={openNew} />
+        <BottomNav current={selectedMemoId ? (pageStack[pageStack.length - 1] || "home") : page} onChange={handlePageChange} onNew={openNew} />
 
         {/* Editor modal — editing !== undefined means it's open */}
         {editing !== undefined && (

@@ -1,200 +1,233 @@
 import { useState, useEffect } from 'react'
-import { getAllTags, renameTag, deleteTag, getTagListStyle, saveTagListStyle } from '../lib/storage'
-import type { TagListStyle } from '../lib/types'
+import { downloadExportFile, importData, getTheme, saveTheme, getDeletedMemos, restoreMemo, permanentDeleteMemo, emptyTrash, getTagListStyle, saveTagListStyle, type ExportData } from '../lib/storage'
+import type { Theme, Memo, TagListStyle } from '../lib/types'
 
 interface Props {
   refreshKey?: number
   onRefresh?: () => void
+  onTagEditClick?: () => void
 }
 
-export default function SettingsPage({ refreshKey, onRefresh }: Props) {
-  const [tags, setTags] = useState<string[]>([])
-  const [editingTag, setEditingTag] = useState<string | null>(null)
-  const [newTagName, setNewTagName] = useState('')
-  const [deletingTag, setDeletingTag] = useState<string | null>(null)
- const [tagListStyle, setTagListStyle] = useState<TagListStyle>('circle')
+export default function SettingsPage({ refreshKey, onRefresh, onTagEditClick }: Props) {
+  const [tagListStyle, setTagListStyle] = useState<TagListStyle>('circle')
+  const [theme, setTheme] = useState<Theme>('auto')
+  const [importStatus, setImportStatus] = useState<{ success: boolean; message: string } | null>(null)
+  const [showTrash, setShowTrash] = useState(false)
+  const [deletedMemos, setDeletedMemos] = useState<Memo[]>([])
+  const [permanentlyDeleting, setPermanentlyDeleting] = useState<number | null>(null)
 
   useEffect(() => {
-    setTags(getAllTags())
+    setTagListStyle(getTagListStyle())
+    setTheme(getTheme())
+    setDeletedMemos(getDeletedMemos())
   }, [refreshKey])
-
-  const handleRename = (oldTag: string) => {
-    if (!newTagName.trim() || newTagName.trim() === oldTag) {
-      setEditingTag(null)
-      setNewTagName('')
-      return
-    }
-    renameTag(oldTag, newTagName.trim())
-    setTags(getAllTags())
-    setEditingTag(null)
-    setNewTagName('')
-    onRefresh?.()
-  }
  
   const handleTagListStyleChange = (style: TagListStyle) => {
     setTagListStyle(style)
     saveTagListStyle(style)
     onRefresh?.()
   }
-  const handleDelete = (tag: string) => {
-    if (confirm(`Delete tag "#${tag}"? This will remove it from all entries.`)) {
-      deleteTag(tag)
-      setTags(getAllTags())
-      setDeletingTag(null)
+
+  const handleThemeChange = (newTheme: Theme) => {
+    setTheme(newTheme)
+    saveTheme(newTheme)
+    onRefresh?.()
+  }
+
+  const handleExport = () => {
+    downloadExportFile()
+  }
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string) as ExportData
+        const result = importData(data)
+        setImportStatus(result)
+        if (result.success) {
+          onRefresh?.()
+        }
+      } catch (error) {
+        setImportStatus({ success: false, message: 'Failed to parse file' })
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
+  const handleRestore = (id: number) => {
+    restoreMemo(id)
+    setDeletedMemos(getDeletedMemos())
+    onRefresh?.()
+  }
+
+  const handlePermanentDelete = (id: number) => {
+    if (confirm('Permanently delete this entry? This cannot be undone.')) {
+      permanentDeleteMemo(id)
+      setDeletedMemos(getDeletedMemos())
+      onRefresh?.()
     }
   }
 
-  const startEdit = (tag: string) => {
-    setEditingTag(tag)
-    setNewTagName(tag)
-  }
-
-  const cancelEdit = () => {
-    setEditingTag(null)
-    setNewTagName('')
+  const handleEmptyTrash = () => {
+    if (confirm(`Permanently delete all ${deletedMemos.length} items in trash? This cannot be undone.`)) {
+      emptyTrash()
+      setDeletedMemos([])
+      onRefresh?.()
+    }
   }
 
   return (
     <div className="px-5 py-6">
       <h2 className="text-[20px] font-semibold text-[#1a1a1a] mb-6">Settings</h2>
 
-      {/* Tag List Style Setting */}
+      {/* Tag Management Link */}
       <div className="mb-8">
-        <h3 className="text-[16px] font-semibold text-[#1a1a1a] mb-4">Tag List Style</h3>
+        <button
+          onClick={onTagEditClick}
+          className="w-full px-4 py-3 bg-[#faf9f7] rounded-xl border border-[#f0ede8] flex items-center justify-between hover:bg-[#f0ede8] transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-xl">🏷️</span>
+            <span className="text-[14px] font-medium text-[#1a1a1a]">Edit Tags</span>
+          </div>
+          <span className="text-[#bbb]">›</span>
+        </button>
+      </div>
+
+      {/* Theme Setting */}
+      <div className="mb-8">
+        <h3 className="text-[16px] font-semibold text-[#1a1a1a] mb-4">Theme</h3>
         <div className="flex gap-3">
           <button
-            onClick={() => handleTagListStyleChange('circle')}
+            onClick={() => handleThemeChange('light')}
             className={`flex-1 px-4 py-3 rounded-xl border-2 transition-all ${
-              tagListStyle === 'circle'
+              theme === 'light'
                 ? 'border-[#1a1a1a] bg-[#1a1a1a] text-white'
                 : 'border-[#e8e3dd] bg-white text-[#1a1a1a] hover:border-[#c87941]'
             }`}
           >
             <div className="flex flex-col items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#e8e3dd] border-2 border-[#c87941] flex items-center justify-center text-[10px] font-bold text-[#1a1a1a]">
-                #tag
-              </div>
-              <span className="text-[12px] font-medium">Circle</span>
+              <span className="text-2xl">☀️</span>
+              <span className="text-[12px] font-medium">Light</span>
             </div>
           </button>
           <button
-            onClick={() => handleTagListStyleChange('folder')}
+            onClick={() => handleThemeChange('dark')}
             className={`flex-1 px-4 py-3 rounded-xl border-2 transition-all ${
-              tagListStyle === 'folder'
+              theme === 'dark'
                 ? 'border-[#1a1a1a] bg-[#1a1a1a] text-white'
                 : 'border-[#e8e3dd] bg-white text-[#1a1a1a] hover:border-[#c87941]'
             }`}
           >
             <div className="flex flex-col items-center gap-2">
-              <img src="/img/folder01.png" alt="folder" className="w-8 h-8 object-contain" />
-              <span className="text-[12px] font-medium">Folder</span>
+              <span className="text-2xl">🌙</span>
+              <span className="text-[12px] font-medium">Dark</span>
+            </div>
+          </button>
+          <button
+            onClick={() => handleThemeChange('auto')}
+            className={`flex-1 px-4 py-3 rounded-xl border-2 transition-all ${
+              theme === 'auto'
+                ? 'border-[#1a1a1a] bg-[#1a1a1a] text-white'
+                : 'border-[#e8e3dd] bg-white text-[#1a1a1a] hover:border-[#c87941]'
+            }`}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-2xl">🔄</span>
+              <span className="text-[12px] font-medium">Auto</span>
             </div>
           </button>
         </div>
       </div>
 
-      <h2 className="text-[20px] font-semibold text-[#1a1a1a] mb-6">Manage Tags</h2>
+      {/* Data Management Section */}
+      <h2 className="text-[20px] font-semibold text-[#1a1a1a] mb-6 mt-8">Data Management</h2>
 
-      {tags.length === 0 ? (
-        <div className="flex flex-col items-center py-16 gap-2">
-          <span className="text-4xl opacity-20">🏷️</span>
-          <p className="text-[14px] text-[#9a9a9a]">No tags yet</p>
-          <p className="text-[12px] text-[#bbb]">
-            Add tags to your diary entries to organize them
-          </p>
+      {/* Export/Import */}
+      <div className="mb-8">
+        <h3 className="text-[16px] font-semibold text-[#1a1a1a] mb-4">Export/Import Data</h3>
+        <div className="flex gap-3">
+          <button
+            onClick={handleExport}
+            className="flex-1 px-4 py-3 bg-[#1a1a1a] text-white text-[14px] font-medium rounded-xl hover:bg-[#333] transition-colors"
+          >
+            Export Data
+          </button>
+          <label className="flex-1 px-4 py-3 bg-[#e8e3dd] text-[#1a1a1a] text-[14px] font-medium rounded-xl hover:bg-[#d0c9c0] transition-colors text-center cursor-pointer">
+            Import Data
+            <input type="file" accept=".json" onChange={handleImport} className="hidden" />
+          </label>
         </div>
-      ) : (
-        <div className="space-y-2">
-          {tags.map(tag => (
-            <div
-              key={tag}
-              className="flex items-center justify-between px-4 py-3 bg-[#faf9f7] rounded-xl border border-[#f0ede8]"
-            >
-              {editingTag === tag ? (
-                <div className="flex items-center gap-2 flex-1">
-                  <span className="text-[#999] text-sm">#</span>
-                  <input
-                    type="text"
-                    value={newTagName}
-                    onChange={e => setNewTagName(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') handleRename(tag)
-                      if (e.key === 'Escape') cancelEdit()
-                    }}
-                    className="flex-1 px-2 py-1 bg-white rounded-lg text-[13px] outline-none border border-[#e8e3dd] focus:border-[#bbb]"
-                    autoFocus
-                  />
-                  <button
-                    onClick={() => handleRename(tag)}
-                    className="px-3 py-1 bg-[#1a1a1a] text-white text-[12px] rounded-lg font-medium hover:bg-[#333] transition-colors"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={cancelEdit}
-                    className="px-3 py-1 bg-[#e8e3dd] text-[#1a1a1a] text-[12px] rounded-lg font-medium hover:bg-[#d0c9c0] transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#999] text-sm">#</span>
-                    <span className="text-[14px] text-[#1a1a1a] font-medium">{tag}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => startEdit(tag)}
-                      className="w-8 h-8 flex items-center justify-center text-[#bbb] hover:text-[#555] transition-colors text-sm"
-                      aria-label="Edit tag"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={() => setDeletingTag(tag)}
-                      className="w-8 h-8 flex items-center justify-center text-[#bbb] hover:text-red-400 transition-colors text-sm"
-                      aria-label="Delete tag"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Delete confirmation modal */}
-      {deletingTag && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-5">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
-            onClick={() => setDeletingTag(null)}
-          />
-          <div className="relative w-full max-w-sm bg-white rounded-2xl p-6 shadow-xl">
-            <h3 className="text-[18px] font-semibold text-[#1a1a1a] mb-2">Delete Tag</h3>
-            <p className="text-[14px] text-[#666] mb-6">
-              Are you sure you want to delete "#{deletingTag}"? This will remove it from all entries.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeletingTag(null)}
-                className="flex-1 px-4 py-3 bg-[#faf9f7] text-[#1a1a1a] text-[14px] font-medium rounded-xl hover:bg-[#f0ede8] transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDelete(deletingTag)}
-                className="flex-1 px-4 py-3 bg-red-500 text-white text-[14px] font-medium rounded-xl hover:bg-red-600 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
+        {importStatus && (
+          <div className={`mt-3 px-4 py-2 rounded-lg text-[13px] ${importStatus.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            {importStatus.message}
           </div>
+        )}
+      </div>
+
+      {/* Trash Section */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[16px] font-semibold text-[#1a1a1a]">Trash</h3>
+          <button
+            onClick={() => setShowTrash(!showTrash)}
+            className="text-[13px] text-[#c87941] font-medium"
+          >
+            {showTrash ? 'Hide' : 'Show'} ({deletedMemos.length})
+          </button>
         </div>
-      )}
+
+        {showTrash && (
+          <div className="space-y-2">
+            {deletedMemos.length === 0 ? (
+              <div className="text-center py-8 text-[#9a9a9a] text-[14px]">
+                Trash is empty
+              </div>
+            ) : (
+              <>
+                {deletedMemos.map(memo => (
+                  <div
+                    key={memo.id}
+                    className="flex items-center justify-between px-4 py-3 bg-[#faf9f7] rounded-xl border border-[#f0ede8]"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-medium text-[#1a1a1a] truncate">{memo.title}</p>
+                      <p className="text-[12px] text-[#999]">{memo.date}</p>
+                    </div>
+                    <div className="flex items-center gap-2 ml-3">
+                      <button
+                        onClick={() => handleRestore(memo.id)}
+                        className="px-3 py-1 bg-[#1a1a1a] text-white text-[12px] rounded-lg font-medium hover:bg-[#333] transition-colors"
+                      >
+                        Restore
+                      </button>
+                      <button
+                        onClick={() => handlePermanentDelete(memo.id)}
+                        className="px-3 py-1 bg-red-500 text-white text-[12px] rounded-lg font-medium hover:bg-red-600 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {deletedMemos.length > 0 && (
+                  <button
+                    onClick={handleEmptyTrash}
+                    className="w-full px-4 py-3 bg-red-500 text-white text-[14px] font-medium rounded-xl hover:bg-red-600 transition-colors mt-4"
+                  >
+                    Empty Trash
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

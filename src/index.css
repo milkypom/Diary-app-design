@@ -9,6 +9,90 @@
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode styles */
+.dark {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3d3d3d;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a0a0a0;
+  --border-color: #3d3d3d;
+}
+
+.dark body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.dark .bg-white {
+  background-color: var(--bg-secondary) !important;
+}
+
+.dark .bg-[#faf9f7] {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.dark .bg-[#f5f0eb] {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.dark .bg-[#e8e3dd] {
+  background-color: var(--border-color) !important;
+}
+
+.dark .text-[#1a1a1a] {
+  color: var(--text-primary) !important;
+}
+
+.dark .text-[#9a9a9a] {
+  color: var(--text-secondary) !important;
+}
+
+.dark .text-[#bbb] {
+  color: var(--text-secondary) !important;
+}
+
+.dark .border-[#e8e3dd] {
+  border-color: var(--border-color) !important;
+}
+
+.dark .border-[#f0ede8] {
+  border-color: var(--border-color) !important;
+}
+
+.dark .border-white {
+  border-color: var(--border-color) !important;
+}
+
+.dark .border-[#1a1a1a] {
+  border-color: var(--text-primary) !important;
+}
+
+.dark .hover\:bg-white:hover {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.dark .hover\:bg-[#f0ede8]:hover {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.dark .hover\:text-[#555]:hover {
+  color: var(--text-primary) !important;
+}
+
+.dark .hover\:text-[#777]:hover {
+  color: var(--text-primary) !important;
+}
+
+.dark .focus\:bg-white:focus {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.dark .focus\:border-[#bbb]:focus {
+  border-color: var(--text-secondary) !important;
 }
 
 @keyframes slideUp {

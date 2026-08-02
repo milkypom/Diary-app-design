@@ -1,7 +1,8 @@
-import type { Memo, EditorData, Comment } from './types'
+import type { Memo, EditorData, Comment, TagListStyle, Theme, Mood, Weather } from './types'
 
 const KEY = 'daylog_memos'
 const PROFILE_KEY = 'daylog_profile'
+const SETTINGS_KEY = 'daylog_settings'
 
 export interface Profile {
   name: string
@@ -34,6 +35,42 @@ export function saveTagListStyle(tagListStyle: TagListStyle): boolean {
   } catch {
     return false
   }
+}
+
+export function getTheme(): Theme {
+  try {
+    const data = localStorage.getItem(SETTINGS_KEY)
+    if (data) {
+      const settings = JSON.parse(data)
+      return settings.theme || 'auto'
+    }
+  } catch {
+    // ignore error
+  }
+  return 'auto'
+}
+
+export function saveTheme(theme: Theme): boolean {
+  try {
+    const currentSettings = localStorage.getItem(SETTINGS_KEY)
+    const settings = currentSettings ? JSON.parse(currentSettings) : {}
+    settings.theme = theme
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function getEffectiveTheme(): 'light' | 'dark' {
+  const savedTheme = getTheme()
+  if (savedTheme !== 'auto') return savedTheme
+  
+  // Check system preference
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    return 'dark'
+  }
+  return 'light'
 }
 
 export function getProfile(): Profile {
@@ -140,6 +177,33 @@ export function deleteMemo(id: number): boolean {
   const memo = memos.find(m => m.id === id)
   if (!memo) return false
   memo.deleted = true
+  memo.deletedAt = new Date().toISOString()
+  return saveMemos(memos)
+}
+
+export function restoreMemo(id: number): boolean {
+  const memos = getMemos()
+  const memo = memos.find(m => m.id === id)
+  if (!memo) return false
+  memo.deleted = false
+  delete memo.deletedAt
+  return saveMemos(memos)
+}
+
+export function getDeletedMemos(): Memo[] {
+  return getMemos().filter(m => m.deleted)
+}
+
+export function permanentDeleteMemo(id: number): boolean {
+  const memos = getMemos()
+  const idx = memos.findIndex(m => m.id === id)
+  if (idx === -1) return false
+  memos.splice(idx, 1)
+  return saveMemos(memos)
+}
+
+export function emptyTrash(): boolean {
+  const memos = getMemos().filter(m => !m.deleted)
   return saveMemos(memos)
 }
 
@@ -163,6 +227,94 @@ export function searchMemos(keyword: string): Memo[] {
       m.tags?.some(t => t.toLowerCase().includes(lower))
     )
   })
+}
+
+export interface SearchFilters {
+  keyword: string
+  tags: string[]
+  mood: Mood | ''
+  weather: Weather | ''
+  dateFrom: string
+  dateTo: string
+  bookmarked: boolean
+}
+
+export interface SearchOptions {
+  filters: SearchFilters
+  sortBy: 'date' | 'title' | 'modified'
+  sortOrder: 'asc' | 'desc'
+}
+
+export function advancedSearch(options: SearchOptions): Memo[] {
+  const { filters, sortBy, sortOrder } = options
+  let results = getMemos().filter(m => {
+    if (m.deleted) return false
+
+    // Keyword search
+    if (filters.keyword.trim()) {
+      const lower = filters.keyword.toLowerCase()
+      const matchesKeyword =
+        m.title?.toLowerCase().includes(lower) ||
+        m.content?.toLowerCase().includes(lower) ||
+        m.tags?.some(t => t.toLowerCase().includes(lower))
+      if (!matchesKeyword) return false
+    }
+
+    // Tag filter
+    if (filters.tags.length > 0) {
+      const hasTag = filters.tags.some(tag => m.tags?.includes(tag))
+      if (!hasTag) return false
+    }
+
+    // Mood filter
+    if (filters.mood && m.mood !== filters.mood) {
+      return false
+    }
+
+    // Weather filter
+    if (filters.weather && m.weather !== filters.weather) {
+      return false
+    }
+
+    // Date range filter
+    if (filters.dateFrom) {
+      const memoDate = new Date(m.date || m.createdAt?.split('T')[0] || '')
+      const fromDate = new Date(filters.dateFrom)
+      if (memoDate < fromDate) return false
+    }
+
+    if (filters.dateTo) {
+      const memoDate = new Date(m.date || m.createdAt?.split('T')[0] || '')
+      const toDate = new Date(filters.dateTo)
+      if (memoDate > toDate) return false
+    }
+
+    // Bookmark filter
+    if (filters.bookmarked && !m.bookmark) {
+      return false
+    }
+
+    return true
+  })
+
+  // Sort results
+  results.sort((a, b) => {
+    let comparison = 0
+    switch (sortBy) {
+      case 'date':
+        comparison = new Date(a.date || a.createdAt || '').getTime() - new Date(b.date || b.createdAt || '').getTime()
+        break
+      case 'title':
+        comparison = (a.title || '').localeCompare(b.title || '')
+        break
+      case 'modified':
+        comparison = new Date(a.updatedAt || a.createdAt || '').getTime() - new Date(b.updatedAt || b.createdAt || '').getTime()
+        break
+    }
+    return sortOrder === 'asc' ? comparison : -comparison
+  })
+
+  return results
 }
 
 export function getAllTags(): string[] {
@@ -349,4 +501,83 @@ export function addComment(memoId: number, text: string): Comment {
 export function deleteComment(id: number): void {
   const all = getAllComments().filter(c => c.id !== id)
   saveAllComments(all)
+}
+
+// ── Export/Import ──────────────────────────────────────────────
+
+export interface ExportData {
+  memos: Memo[]
+  comments: Comment[]
+  profile: Profile
+  settings: {
+    tagListStyle: TagListStyle
+    theme: Theme
+  }
+  exportedAt: string
+  version: string
+}
+
+export function exportData(): ExportData {
+  return {
+    memos: getMemos(),
+    comments: getAllComments(),
+    profile: getProfile(),
+    settings: {
+      tagListStyle: getTagListStyle(),
+      theme: getTheme(),
+    },
+    exportedAt: new Date().toISOString(),
+    version: '1.0.0',
+  }
+}
+
+export function importData(data: ExportData): { success: boolean; message: string } {
+  try {
+    // Validate data structure
+    if (!data.memos || !Array.isArray(data.memos)) {
+      return { success: false, message: 'Invalid data format: missing memos' }
+    }
+    
+    if (!data.comments || !Array.isArray(data.comments)) {
+      return { success: false, message: 'Invalid data format: missing comments' }
+    }
+    
+    if (!data.profile || typeof data.profile !== 'object') {
+      return { success: false, message: 'Invalid data format: missing profile' }
+    }
+    
+    // Save data
+    if (!saveMemos(data.memos)) {
+      return { success: false, message: 'Failed to save memos (storage quota exceeded)' }
+    }
+    
+    saveAllComments(data.comments)
+    saveProfile(data.profile)
+    
+    if (data.settings?.tagListStyle) {
+      saveTagListStyle(data.settings.tagListStyle)
+    }
+    
+    if (data.settings?.theme) {
+      saveTheme(data.settings.theme)
+    }
+    
+    return { success: true, message: 'Data imported successfully' }
+  } catch (error) {
+    return { success: false, message: `Import failed: ${error instanceof Error ? error.message : 'Unknown error'}` }
+  }
+}
+
+export function downloadExportFile(): void {
+  const data = exportData()
+  const json = JSON.stringify(data, null, 2)
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `daylog-backup-${new Date().toISOString().split('T')[0]}.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }

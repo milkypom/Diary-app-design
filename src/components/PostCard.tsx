@@ -82,6 +82,8 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
   const [commentText, setCommentText] = useState('')
   const [showFullTime, setShowFullTime] = useState(false)
   const [profile, setProfile] = useState(getProfile())
+  const [touchStart, setTouchStart] = useState(0)
+  const [touchEnd, setTouchEnd] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -132,6 +134,27 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
   const avatarColor = AVATAR_COLORS[memo.id % AVATAR_COLORS.length]
   const displayDate = memo.date || memo.createdAt
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(0)
+    setTouchStart(e.targetTouches[0].clientX)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return
+    const distance = touchStart - touchEnd
+    const minSwipeDistance = 50
+
+    if (distance > minSwipeDistance) {
+      nextImg()
+    } else if (distance < -minSwipeDistance) {
+      prevImg()
+    }
+  }
+
   return (
     <article id={id} className="bg-white border-b border-[#f0ede8] transition-all duration-300">
       {/* Header */}
@@ -155,11 +178,15 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
         {/* Menu */}
         <div className="relative ml-1">
           <button
-            className="w-8 h-8 flex items-center justify-center text-[#bbb] hover:text-[#555] transition-colors text-lg leading-none"
+            className="w-8 h-8 flex items-center justify-center transition-transform active:scale-110"
             onClick={() => setMenuOpen(m => !m)}
             aria-label="Post options"
           >
-            •••
+            <img
+              src="/img/post options.png"
+              alt="Post options"
+              className="w-5 h-5 object-contain opacity-60 hover:opacity-100 transition-opacity"
+            />
           </button>
           {menuOpen && (
             <>
@@ -186,7 +213,12 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
 
       {/* Image slider */}
       {images.length > 0 ? (
-        <div className="relative w-full aspect-square overflow-hidden bg-[#f5f0eb]">
+        <div
+          className="relative w-full aspect-square overflow-hidden bg-[#f5f0eb]"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           {images.map((src, i) => (
             <img
               key={i}
@@ -198,39 +230,21 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
             />
           ))}
           {images.length > 1 && (
-            <>
-              <button
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-xl text-[#555] shadow-sm z-10 hover:bg-white transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  prevImg()
-                }}
-                aria-label="Previous photo"
-              >‹</button>
-              <button
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-xl text-[#555] shadow-sm z-10 hover:bg-white transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  nextImg()
-                }}
-                aria-label="Next photo"
-              >›</button>
-              <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
-                {images.map((_, i) => (
-                  <button
-                    key={i}
-                    aria-label={`Photo ${i + 1}`}
-                    className={`h-1.5 rounded-full bg-white transition-all duration-200 ${
-                      i === imgIdx ? 'w-4 opacity-100' : 'w-1.5 opacity-50'
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setImgIdx(i)
-                    }}
-                  />
-                ))}
-              </div>
-            </>
+            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
+              {images.map((_, i) => (
+                <button
+                  key={i}
+                  aria-label={`Photo ${i + 1}`}
+                  className={`h-1.5 rounded-full bg-white transition-all duration-200 ${
+                    i === imgIdx ? 'w-4 opacity-100' : 'w-1.5 opacity-50'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setImgIdx(i)
+                  }}
+                />
+              ))}
+            </div>
           )}
         </div>
       ) : (
@@ -247,9 +261,11 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
             onClick={() => setLiked(l => !l)}
             aria-label="Like"
           >
-            <span className={`text-[22px] leading-none transition-transform active:scale-125 select-none ${liked ? 'text-red-500' : 'text-[#1a1a1a]'}`}>
-              {liked ? '♥' : '♡'}
-            </span>
+            <img
+              src={liked ? '/img/heart_fill.png' : '/img/heart_line.png'}
+              alt={liked ? 'Liked' : 'Not liked'}
+              className="w-6 h-6 object-contain transition-transform active:scale-125 select-none"
+            />
             <span className="text-[12px] text-[#9a9a9a] font-medium tabular-nums">{likeCount}</span>
           </button>
           <button
@@ -266,11 +282,15 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
           </button>
         </div>
         <button
-          className={`text-[22px] leading-none transition-transform active:scale-125 select-none ${bookmarked ? 'text-[#c87941]' : 'text-[#1a1a1a]'}`}
+          className="w-6 h-6 transition-transform active:scale-125 select-none"
           onClick={handleBookmark}
           aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark'}
         >
-          {bookmarked ? '🔖' : '📑'}
+          <img
+            src={bookmarked ? '/img/saved_on.png' : '/img/saved_off.png'}
+            alt={bookmarked ? 'Bookmarked' : 'Not bookmarked'}
+            className="w-full h-full object-contain"
+          />
         </button>
       </div>
 
@@ -279,7 +299,7 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
         {memo.title && (
           <h2 className="text-[15px] font-semibold italic text-[#1a1a1a] mb-1.5 leading-snug flex items-center gap-1.5">
             <span>{memo.title}</span>
-            {memo.weather && <span className="text-[14px] not-italic" title={memo.weather}>{WEATHER_ICON[memo.weather]}</span>}
+            {memo.weather && <span className="text-[14px]" title={memo.weather}>{WEATHER_ICON[memo.weather]}</span>}
           </h2>
         )}
         {memo.content && (
