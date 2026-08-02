@@ -31,7 +31,7 @@ export default function BookmarkPage({ refreshKey, onEdit, onRefresh, onSelectMe
           <span className="text-5xl opacity-20">🔖</span>
           <p className="text-[14px] text-[#9a9a9a]">No saved entries yet</p>
           <p className="text-[12px] text-[#bbb]">
-            Tap 📑 on any entry to save it
+            Tap the bookmark icon on any entry to save it
           </p>
         </div>
       ) : (

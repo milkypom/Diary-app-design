@@ -11,9 +11,10 @@ interface Props {
   selectedMemoId: number | null
   onClearSelection: () => void
   onSelectMemo?: (id: number) => void
+  onTagEditClick?: () => void
 }
 
-export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId, onClearSelection, onSelectMemo }: Props) {
+export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId, onClearSelection, onSelectMemo, onTagEditClick }: Props) {
   const [memos, setMemos] = useState<Memo[]>([])
   const [allTags, setAllTags] = useState<string[]>([])
   const [activeTag, setActiveTag] = useState<string | null>(null)
@@ -75,6 +76,7 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
         avatarUrl: (m as any).avatarUrl ?? undefined,
         date: m.date || m.createdAt,
         durationMs: 3500,
+        mood: m.mood ?? undefined,
       }))
   }
 
@@ -188,6 +190,16 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
               </button>
             )
           })}
+          {onTagEditClick && (
+            <button
+              onClick={onTagEditClick}
+              className={`flex-shrink-0 ${
+                tagListStyle === 'folder' ? 'w-14 h-14 rounded-xl' : 'w-16 h-16 rounded-full'
+              } text-[11px] font-medium border-2 transition-all flex flex-col items-center justify-center relative overflow-hidden border-[#e8e3dd] bg-[#faf9f7] text-[#777] hover:border-[#d0c9c0] hover:text-[#1a1a1a]`}
+            >
+              <span className="text-2xl font-light">+</span>
+            </button>
+          )}
         </div>
       )}
 

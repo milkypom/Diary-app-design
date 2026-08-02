@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef } from "react"
-import type { Memo, Comment } from "../lib/types"
+import type { Memo, Comment, Page } from "../lib/types"
 import {
   getComments,
   addComment,
   deleteComment,
   deleteMemo,
   getProfile,
+  toggleBookmark,
 } from "../lib/storage"
 
 const WEATHER_ICON: Record<string, string> = {
@@ -21,6 +22,7 @@ interface Props {
   onEdit?: (memo: Memo) => void
   onDelete?: (id: number) => void
   onRefresh?: () => void
+  currentPage?: Page
 }
 
 export default function PostDetailPage({
@@ -29,11 +31,13 @@ export default function PostDetailPage({
   onEdit,
   onDelete,
   onRefresh,
+  currentPage,
 }: Props) {
   const [idx, setIdx] = useState(0)
   const [comments, setComments] = useState<Comment[]>([])
   const [commentText, setCommentText] = useState("")
   const [showActions, setShowActions] = useState(false)
+  const [bookmarked, setBookmarked] = useState(memo?.bookmark || false)
   const [profile, setProfile] = useState(getProfile())
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -41,6 +45,7 @@ export default function PostDetailPage({
     if (!memo) return
     setComments(getComments(memo.id))
     setIdx(0)
+    setBookmarked(memo.bookmark)
   }, [memo])
 
   if (!memo) return null
@@ -75,6 +80,13 @@ export default function PostDetailPage({
     onEdit?.(memo)
   }
 
+  function handleBookmark() {
+    if (!memo) return
+    setBookmarked(b => !b)
+    toggleBookmark(memo.id)
+    onRefresh?.()
+  }
+
   function handleDelete() {
     if (!confirm("Delete this entry?")) return
     if (onDelete) onDelete(memo.id)
@@ -83,13 +95,10 @@ export default function PostDetailPage({
       onRefresh?.()
     }
     onBack()
-    if (useBrowserBack) {
-      window.history.back()
-    }
   }
 
   return (
-    <article className="w-full max-w-[480px] mx-auto bg-white">
+    <article className="w-full bg-white flex flex-col min-h-screen">
       <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-[#f0ede8] px-4 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <button onClick={onBack} className="text-[16px] px-2 py-1">
@@ -106,10 +115,14 @@ export default function PostDetailPage({
         <div className="relative ml-1">
           <button
             onClick={() => setShowActions((s) => !s)}
-            className="w-8 h-8 flex items-center justify-center text-[#bbb] hover:text-[#555] transition-colors text-lg leading-none"
+            className="w-8 h-8 flex items-center justify-center transition-transform active:scale-110"
             aria-label="Post options"
           >
-            •••
+            <img
+              src="/img/post options.png"
+              alt="Post options"
+              className="w-5 h-5 object-contain opacity-60 hover:opacity-100 transition-opacity"
+            />
           </button>
           {showActions && (
             <>
@@ -136,11 +149,11 @@ export default function PostDetailPage({
 
       {/* Image slider */}
       {images.length > 0 ? (
-        <div className="relative w-full bg-[#f5f0eb]">
+        <div className="relative w-full h-[50vh] bg-[#f5f0eb] flex-shrink-0">
           <img
             src={images[idx]}
             alt={`Photo ${idx + 1}`}
-            className="w-full h-[420px] object-cover"
+            className="w-full h-full object-cover"
           />
           {images.length > 1 && (
             <>
@@ -174,21 +187,34 @@ export default function PostDetailPage({
           )}
         </div>
       ) : (
-        <div className="w-full aspect-square bg-gradient-to-br from-[#fdf4f0] to-[#f0e8de] flex items-center justify-center">
+        <div className="w-full h-[50vh] bg-gradient-to-br from-[#fdf4f0] to-[#f0e8de] flex items-center justify-center flex-shrink-0">
           <span className="text-7xl opacity-20">📷</span>
         </div>
       )}
 
-      <div className="px-4 pb-6 pt-4">
-        <div className="flex items-center gap-2 mb-2">
-          {memo.title && (
-            <h1 className="text-[20px] font-semibold italic text-[#1a1a1a]">
-              {memo.title}
-            </h1>
-          )}
-          {memo.weather && (
-            <span className="text-[18px]">{WEATHER_ICON[memo.weather]}</span>
-          )}
+      <div className="px-4 pb-20 pt-4 flex-1 overflow-y-auto">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            {memo.title && (
+              <h1 className="text-[20px] font-semibold text-[#1a1a1a]">
+                {memo.title}
+              </h1>
+            )}
+            {memo.weather && (
+              <span className="text-[18px]">{WEATHER_ICON[memo.weather]}</span>
+            )}
+          </div>
+          <button
+            className="w-6 h-6 transition-transform active:scale-125 select-none"
+            onClick={handleBookmark}
+            aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark'}
+          >
+            <img
+              src={bookmarked ? '/img/heart_fill.png' : '/img/heart_line.png'}
+              alt={bookmarked ? 'Bookmarked' : 'Not bookmarked'}
+              className="w-full h-full object-contain"
+            />
+          </button>
         </div>
 
         <div className="text-[14px] text-[#333] leading-relaxed whitespace-pre-wrap mb-3">

@@ -2,6 +2,155 @@ import { useState, useRef, useEffect, type ChangeEvent } from 'react'
 import type { Memo, Weather, Mood, EditorData } from '../lib/types'
 import { addMemo, updateMemo, getMemos } from '../lib/storage'
 
+function ImageThumbnailGrid({
+  images,
+  onRemove,
+  onReorder,
+  onAddImages,
+  enableSlide = true,
+  showThumbnails = true,
+}: {
+  images: string[]
+  onRemove: (index: number) => void
+  onReorder: (fromIndex: number, toIndex: number) => void
+  onAddImages: (files: File[]) => void
+  enableSlide?: boolean
+  showThumbnails?: boolean
+}) {
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [previewIndex, setPreviewIndex] = useState(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Reset preview index when enableSlide changes or images change
+  useEffect(() => {
+    if (!enableSlide) {
+      setPreviewIndex(0)
+    }
+  }, [enableSlide, images.length])
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault()
+    if (draggedIndex !== null && draggedIndex !== dropIndex) {
+      onReorder(draggedIndex, dropIndex)
+    }
+    setDraggedIndex(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null)
+  }
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'))
+    if (files.length > 0) {
+      onAddImages(files)
+    }
+    e.target.value = ''
+  }
+
+  const handlePrev = () => {
+    setPreviewIndex(i => (i - 1 + images.length) % images.length)
+  }
+
+  const handleNext = () => {
+    setPreviewIndex(i => (i + 1) % images.length)
+  }
+
+  return (
+    <div>
+      {/* Large Preview */}
+      {images.length > 0 && (
+        <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-[#f5f0eb] mb-4">
+          <img
+            src={enableSlide ? images[previewIndex] : images[0]}
+            alt={`Preview ${enableSlide ? previewIndex + 1 : 1}`}
+            className="w-full h-full object-cover"
+          />
+          {enableSlide && images.length > 1 && (
+            <>
+              <button
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-xl text-[#555] shadow-sm z-10 hover:bg-white transition-colors"
+                onClick={handlePrev}
+                aria-label="Previous photo"
+              >
+                ‹
+              </button>
+              <button
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-xl text-[#555] shadow-sm z-10 hover:bg-white transition-colors"
+                onClick={handleNext}
+                aria-label="Next photo"
+              >
+                ›
+              </button>
+            </>
+          )}
+          <div className="absolute top-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+            {enableSlide ? `${previewIndex + 1}/${images.length}` : `1/${images.length}`}
+          </div>
+        </div>
+      )}
+
+      {/* Thumbnail Grid */}
+      {showThumbnails && (
+        <div className="grid grid-cols-4 gap-2">
+          {images.map((src, index) => (
+            <div
+              key={index}
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
+              onClick={() => enableSlide && setPreviewIndex(index)}
+              className={`relative aspect-square rounded-lg overflow-hidden cursor-move border-2 transition-all ${
+                draggedIndex === index ? 'opacity-50 border-[#c87941]' : 
+                (enableSlide && previewIndex === index) ? 'border-[#c87941]' : 'border-transparent hover:border-[#e8e3dd]'
+              }`}
+            >
+              <img
+                src={src}
+                alt={`Photo ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onRemove(index)
+                }}
+                className="absolute top-1 right-1 w-5 h-5 bg-black/50 rounded-full flex items-center justify-center text-white text-xs hover:bg-black/70 transition-colors"
+                aria-label="Remove photo"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <label className="aspect-square rounded-lg border-2 border-dashed border-[#ddd] flex items-center justify-center cursor-pointer hover:border-[#c87941] hover:bg-[#faf9f7] transition-colors">
+            <span className="text-2xl text-[#888]">+</span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </label>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const WEATHER_OPTIONS = [
   { value: 'sunny' as Weather, icon: '☀️', label: 'Sunny' },
   { value: 'cloudy' as Weather, icon: '☁️', label: 'Cloudy' },
@@ -54,75 +203,12 @@ interface Props {
   onClose: () => void
 }
 
-function ImageSlider({
-  images,
-  imgIdx,
-  setImgIdx,
-  interactive = true,
-}: {
-  images: string[]
-  imgIdx: number
-  setImgIdx: (i: number) => void
-  interactive?: boolean
-}) {
-  if (images.length === 0) {
-    return (
-      <div className="w-full aspect-square rounded-2xl bg-[#faf9f7] border-2 border-dashed border-[#e8e3dd] flex flex-col items-center justify-center gap-2">
-        <span className="text-4xl opacity-40">📷</span>
-        <p className="text-[12px] text-[#aaa]">No photos yet</p>
-      </div>
-    )
-  }
-  return (
-    <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-[#f5f0eb]">
-      {images.map((src, i) => (
-        <img
-          key={i}
-          src={src}
-          alt=""
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ${
-            i === imgIdx ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-        />
-      ))}
-      {interactive && images.length > 1 && (
-        <>
-          <button
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center text-lg z-10"
-            onClick={() => setImgIdx((imgIdx - 1 + images.length) % images.length)}
-          >
-            ‹
-          </button>
-          <button
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center text-lg z-10"
-            onClick={() => setImgIdx((imgIdx + 1) % images.length)}
-          >
-            ›
-          </button>
-          <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
-            {images.map((_, i) => (
-              <button
-                key={i}
-                className={`h-1.5 rounded-full bg-white transition-all ${
-                  i === imgIdx ? 'w-4 opacity-100' : 'w-1.5 opacity-50'
-                }`}
-                onClick={() => setImgIdx(i)}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
-
 const inputCls =
   'w-full px-4 py-3 border border-[#e8e3dd] rounded-xl bg-[#faf9f7] text-[13px] outline-none focus:border-[#bbb] focus:bg-white transition-colors'
 
 export default function EditorModal({ memo, onSave, onClose }: Props) {
   const [step, setStep] = useState(1)
   const [images, setImages] = useState<string[]>(memo?.images || [])
-  const [imgIdx, setImgIdx] = useState(0)
   const [date, setDate] = useState(memo?.date || getToday())
   const [weather, setWeather] = useState<Weather>(memo?.weather || '')
   const [mood, setMood] = useState<Mood>(memo?.mood || '')
@@ -133,7 +219,6 @@ export default function EditorModal({ memo, onSave, onClose }: Props) {
   const [existingTags, setExistingTags] = useState<string[]>([])
   const [showTagSuggestions, setShowTagSuggestions] = useState(false)
   const [location, setLocation] = useState(memo?.location || '')
-  const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const allMemos = getMemos()
@@ -141,9 +226,20 @@ export default function EditorModal({ memo, onSave, onClose }: Props) {
     setExistingTags(tags)
   }, [])
 
-  const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'))
-    if (!files.length) return
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const reorderImages = (fromIndex: number, toIndex: number) => {
+    setImages(prev => {
+      const newImages = [...prev]
+      const [moved] = newImages.splice(fromIndex, 1)
+      newImages.splice(toIndex, 0, moved)
+      return newImages
+    })
+  }
+
+  const handleAddImages = async (files: File[]) => {
     const results = await Promise.all(
       files.map(
         f =>
@@ -155,20 +251,7 @@ export default function EditorModal({ memo, onSave, onClose }: Props) {
           })
       )
     )
-    setImages(prev => {
-      const next = [...prev, ...results]
-      setImgIdx(next.length - 1)
-      return next
-    })
-    e.target.value = ''
-  }
-
-  const removeImage = () => {
-    setImages(prev => {
-      const next = prev.filter((_, i) => i !== imgIdx)
-      setImgIdx(Math.max(0, Math.min(imgIdx, next.length - 1)))
-      return next
-    })
+    setImages(prev => [...prev, ...results])
   }
 
   const save = () => {
@@ -231,7 +314,19 @@ export default function EditorModal({ memo, onSave, onClose }: Props) {
         </div>
 
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-end px-5 py-3.5 bg-white/95 backdrop-blur-sm border-b border-[#f0ede8]">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-3.5 bg-white/95 backdrop-blur-sm">
+          <div>
+            <h3 className="text-[21px] font-semibold italic text-[#1a1a1a]">
+              {step === 1 && "Today's Photos"}
+              {step === 2 && "Today's State"}
+              {step === 3 && "Today's Record"}
+            </h3>
+            <p className="text-[12px] text-[#9a9a9a] mt-0.5">
+              {step === 1 && "Add photos to your entry"}
+              {step === 2 && "How was your day?"}
+              {step === 3 && "Write about your day"}
+            </p>
+          </div>
           <button
             className="w-8 h-8 flex items-center justify-center text-[#aaa] text-[22px] hover:text-[#555] transition-colors leading-none"
             onClick={onClose}
@@ -246,45 +341,13 @@ export default function EditorModal({ memo, onSave, onClose }: Props) {
           {/* ── Step 1: Photos ── */}
           {step === 1 && (
             <div>
-              <div className="mb-5">
-                <h3 className="text-[21px] font-semibold italic text-[#1a1a1a]">
-                  Today's Photos
-                </h3>
-                <p className="text-[12px] text-[#9a9a9a] mt-0.5">Add photos to your entry</p>
-              </div>
-
-              <ImageSlider
+              <ImageThumbnailGrid
                 images={images}
-                imgIdx={imgIdx}
-                setImgIdx={setImgIdx}
-                interactive
+                onRemove={removeImage}
+                onReorder={reorderImages}
+                onAddImages={handleAddImages}
+                enableSlide={true}
               />
-
-              {images.length > 0 && (
-                <div className="flex items-center justify-between mt-2 px-1">
-                  <p className="text-[11px] text-[#bbb]">
-                    {imgIdx + 1} / {images.length}
-                  </p>
-                  <button
-                    className="text-[11px] text-[#bbb] hover:text-red-400 transition-colors"
-                    onClick={removeImage}
-                  >
-                    Remove this photo
-                  </button>
-                </div>
-              )}
-
-              <label className="flex items-center justify-center gap-2 w-full mt-4 py-3.5 border border-dashed border-[#ddd] rounded-xl text-[13px] text-[#888] hover:bg-[#faf9f7] cursor-pointer transition-colors">
-                <span className="text-lg">+</span> Add Photo
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleFiles}
-                />
-              </label>
 
               <div className="mt-7">
                 <button
@@ -300,22 +363,16 @@ export default function EditorModal({ memo, onSave, onClose }: Props) {
           {/* ── Step 2: Date / Weather / Mood ── */}
           {step === 2 && (
             <div>
-              <div className="mb-5">
-                <h3 className="text-[21px] font-semibold italic text-[#1a1a1a]">
-                  Today's State
-                </h3>
-                <p className="text-[12px] text-[#9a9a9a] mt-0.5">
-                  How was your day?
-                </p>
-              </div>
 
               {images.length > 0 && (
                 <div className="mb-5">
-                  <ImageSlider
+                  <ImageThumbnailGrid
                     images={images}
-                    imgIdx={imgIdx}
-                    setImgIdx={() => {}}
-                    interactive={false}
+                    onRemove={removeImage}
+                    onReorder={reorderImages}
+                    onAddImages={handleAddImages}
+                    enableSlide={false}
+                    showThumbnails={false}
                   />
                 </div>
               )}
@@ -394,20 +451,16 @@ export default function EditorModal({ memo, onSave, onClose }: Props) {
           {/* ── Step 3: Content ── */}
           {step === 3 && (
             <div>
-              <div className="mb-5">
-                <h3 className="text-[21px] font-semibold italic text-[#1a1a1a]">
-                  Today's Record
-                </h3>
-                <p className="text-[12px] text-[#9a9a9a] mt-0.5">Write about your day</p>
-              </div>
 
               {images.length > 0 && (
                 <div className="mb-4">
-                  <ImageSlider
+                  <ImageThumbnailGrid
                     images={images}
-                    imgIdx={imgIdx}
-                    setImgIdx={() => {}}
-                    interactive={false}
+                    onRemove={removeImage}
+                    onReorder={reorderImages}
+                    onAddImages={handleAddImages}
+                    enableSlide={false}
+                    showThumbnails={false}
                   />
                 </div>
               )}
