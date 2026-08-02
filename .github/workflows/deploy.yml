@@ -27,14 +27,14 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies (npm)
+      - name: Install dependencies
         run: npm ci
-        # If you use pnpm, replace the above line with:
+        # pnpm 사용 시:
         # run: npm i -g pnpm && pnpm install --frozen-lockfile
 
       - name: Build
         run: npm run build --if-present
-        # use `pnpm build` if you use pnpm and your scripts use pnpm
+        # pnpm 사용 시: run: pnpm build
 
       - name: Configure Pages
         uses: actions/configure-pages@v4
