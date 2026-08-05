@@ -74,7 +74,7 @@ function NavBtn({
       className={`flex flex-col items-center justify-center gap-1 transition-colors ${
         active
           ? activeColor
-            ? 'text-[#c87941]'
+            ? 'text-[#1a1a1a]'
             : 'text-[#1a1a1a]'
           : 'text-[#ccc] hover:text-[#888]'
       }`}

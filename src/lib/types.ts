@@ -1,8 +1,6 @@
 export type Weather = 'sunny' | 'cloudy' | 'rainy' | 'snowy' | ''
 export type Mood = 'happy' | 'normal' | 'sad' | 'angry' | 'excited' | 'tired' | 'anxious' | 'grateful' | ''
 export type Page = 'home' | 'search' | 'my' | 'bookmark' | 'settings' | 'tagEdit'
-export type TagListStyle = 'circle' | 'folder'
-export type Theme = 'light' | 'dark' | 'auto'
 
 export interface Memo {
   id: number

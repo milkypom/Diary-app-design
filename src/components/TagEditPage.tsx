@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getAllTags, renameTag, deleteTag, getTagListStyle, saveTagListStyle } from '../lib/storage'
-import type { TagListStyle } from '../lib/types'
+import { getAllTags, renameTag, deleteTag } from '../lib/storage'
 
 interface Props {
   refreshKey?: number
@@ -12,18 +11,10 @@ export default function TagEditPage({ refreshKey, onRefresh }: Props) {
   const [editingTag, setEditingTag] = useState<string | null>(null)
   const [newTagName, setNewTagName] = useState('')
   const [deletingTag, setDeletingTag] = useState<string | null>(null)
-  const [tagListStyle, setTagListStyle] = useState<TagListStyle>('circle')
 
   useEffect(() => {
     setTags(getAllTags())
-    setTagListStyle(getTagListStyle())
   }, [refreshKey])
-
-  const handleTagListStyleChange = (style: TagListStyle) => {
-    setTagListStyle(style)
-    saveTagListStyle(style)
-    onRefresh?.()
-  }
 
   const handleRename = (oldTag: string) => {
     if (!newTagName.trim() || newTagName.trim() === oldTag) {
@@ -61,40 +52,7 @@ export default function TagEditPage({ refreshKey, onRefresh }: Props) {
     <div className="px-5 py-6">
       <h2 className="text-[20px] font-semibold text-[#1a1a1a] mb-6">Edit Tags</h2>
 
-      {/* Tag List Style Setting */}
-      <div className="mb-8">
-        <h3 className="text-[16px] font-semibold text-[#1a1a1a] mb-4">Tag List Style</h3>
-        <div className="flex gap-3">
-          <button
-            onClick={() => handleTagListStyleChange('circle')}
-            className={`flex-1 px-4 py-3 rounded-xl border-2 transition-all ${
-              tagListStyle === 'circle'
-                ? 'border-[#1a1a1a] bg-[#1a1a1a] text-white'
-                : 'border-[#e8e3dd] bg-white text-[#1a1a1a] hover:border-[#c87941]'
-            }`}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#e8e3dd] border-2 border-[#c87941] flex items-center justify-center text-[10px] font-bold text-[#1a1a1a]">
-                #tag
-              </div>
-              <span className="text-[12px] font-medium">Circle</span>
-            </div>
-          </button>
-          <button
-            onClick={() => handleTagListStyleChange('folder')}
-            className={`flex-1 px-4 py-3 rounded-xl border-2 transition-all ${
-              tagListStyle === 'folder'
-                ? 'border-[#1a1a1a] bg-[#1a1a1a] text-white'
-                : 'border-[#e8e3dd] bg-white text-[#1a1a1a] hover:border-[#c87941]'
-            }`}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <img src="/img/folder01.png" alt="folder" className="w-8 h-8 object-contain" />
-              <span className="text-[12px] font-medium">Folder</span>
-            </div>
-          </button>
-        </div>
-      </div>
+
 
       {tags.length === 0 ? (
         <div className="flex flex-col items-center py-16 gap-2">

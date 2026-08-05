@@ -276,7 +276,7 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
             <span className={`text-[19px] leading-none select-none transition-transform active:scale-110 ${commentOpen ? 'opacity-100' : 'opacity-70'}`}>
               💬
             </span>
-            <span className={`text-[12px] font-medium tabular-nums transition-colors ${commentOpen ? 'text-[#c87941]' : 'text-[#9a9a9a]'}`}>
+            <span className={`text-[12px] font-medium tabular-nums transition-colors ${commentOpen ? 'text-[#1a1a1a]' : 'text-[#9a9a9a]'}`}>
               {comments.length > 0 ? comments.length : getComments(memo.id).length}
             </span>
           </button>
@@ -320,7 +320,7 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
             {memo.tags.map(tag => (
               <button
                 key={tag}
-                className="text-[12px] text-[#c87941] hover:text-[#a06030] transition-colors font-medium"
+                className="text-[12px] text-[#1a1a1a] hover:text-[#333] transition-colors font-medium"
                 onClick={() => onTagClick?.(tag)}
               >
                 #{tag}
@@ -415,10 +415,10 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
                 onChange={e => setCommentText(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment() } }}
                 placeholder="Write a comment…"
-                className="flex-1 bg-[#f5f2ef] border border-transparent rounded-full px-4 py-2.5 text-[13px] outline-none focus:border-[#c87941] focus:bg-white transition-all"
+                className="flex-1 bg-[#f5f2ef] border border-transparent rounded-full px-4 py-2.5 text-[13px] outline-none focus:border-[#1a1a1a] focus:bg-white transition-all"
               />
               <button
-                className={`text-[13px] font-semibold transition-colors px-1 flex-shrink-0 ${commentText.trim() ? 'text-[#c87941] hover:text-[#a06030]' : 'text-[#ccc]'}`}
+                className={`text-[13px] font-semibold transition-colors px-1 flex-shrink-0 ${commentText.trim() ? 'text-[#1a1a1a] hover:text-[#333]' : 'text-[#ccc]'}`}
                 onClick={handleAddComment}
                 disabled={!commentText.trim()}
               >
