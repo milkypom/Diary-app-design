@@ -269,7 +269,7 @@ export default function StoryViewer({
             }}
             aria-label="Toggle caption"
           >
-            ▼
+            <img src="/img/arrow-down-w-line-1.png" alt="Toggle caption" className="caption-toggle-icon" />
           </button>
         )}
 
@@ -307,7 +307,13 @@ export default function StoryViewer({
             </div>
           </div>
           {current?.content && (
-            <div className="story-body">
+            <div 
+              className="story-body"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenPost?.(current.id);
+              }}
+            >
               {captionExpanded || current.content.length <= 100 ? (
                 <>{current.content}</>
               ) : (

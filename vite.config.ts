@@ -3,17 +3,16 @@ import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 import path from "node:path"
 
+
 // Vite config — https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // .figma/make/deploy-preview passes `--mode development` for cached-preview builds.
   const emitSourcemaps = mode === "development"
 
   return {
-    // Use FIGMA_PUBLIC_URL when provided (Make preview). For GitHub Pages,
-    // default to the repository path so assets load correctly from /<repo>/.
     base: process.env.FIGMA_PUBLIC_URL
       ? `${process.env.FIGMA_PUBLIC_URL}/`
-      : "/Diary-app-design/",
+      : "/",
     build: {
       sourcemap: emitSourcemaps ? "inline" : false,
       minify: !emitSourcemaps,
@@ -21,7 +20,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
-      figmaErrorOverlayReplay(),
+          figmaErrorOverlayReplay(),
       figmaReactRefreshBoundaryFallback(),
       figmaMakeKitPlugin({ storiesGlob: "/src/**/*.stories.{ts,tsx,js,jsx}" }),
     ],
@@ -212,7 +211,7 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
               tag: "script",
               children: `
   window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);} 
+  function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
   gtag('config', ${JSON.stringify(googleAnalyticsId)});
 `,
@@ -371,20 +370,20 @@ function figmaMakeKitPlugin(options: {
   const RESOLVED_ID = "\0" + VIRTUAL_ID
   const STORIES_MODULE = `export const stories = import.meta.glob(${JSON.stringify(storiesGlob)})`
   const HTML_BOOTSTRAP = `<!doctype html>
- <html lang="en">
- <head>
- <meta charset="UTF-8" />
- <meta name="viewport" content="width=device-width, initial-scale=1.0" />
- </head>
- <body>
- <div id="figma-make-kit-root"></div>
- <script type="module">
-   import { stories } from 'virtual:figma-stories'
-   window.__FIGMA__ = Object.assign(window.__FIGMA__ ?? {}, { stories })
-   window.dispatchEvent(new CustomEvent('figma.ready'))
- </script>
- </body>
- </html>`
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body>
+<div id="figma-make-kit-root"></div>
+<script type="module">
+  import { stories } from 'virtual:figma-stories'
+  window.__FIGMA__ = Object.assign(window.__FIGMA__ ?? {}, { stories })
+  window.dispatchEvent(new CustomEvent('figma.ready'))
+</script>
+</body>
+</html>`
 
   return {
     name: "figma-make-kit",

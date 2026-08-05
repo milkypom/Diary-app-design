@@ -113,8 +113,8 @@ function ImageThumbnailGrid({
               onDragEnd={handleDragEnd}
               onClick={() => enableSlide && setPreviewIndex(index)}
               className={`relative aspect-square rounded-lg overflow-hidden cursor-move border-2 transition-all ${
-                draggedIndex === index ? 'opacity-50 border-[#c87941]' : 
-                (enableSlide && previewIndex === index) ? 'border-[#c87941]' : 'border-transparent hover:border-[#e8e3dd]'
+                draggedIndex === index ? 'opacity-50 border-[#1a1a1a]' :
+                (enableSlide && previewIndex === index) ? 'border-[#1a1a1a]' : 'border-transparent hover:border-[#e8e3dd]'
               }`}
             >
               <img
@@ -134,7 +134,7 @@ function ImageThumbnailGrid({
               </button>
             </div>
           ))}
-          <label className="aspect-square rounded-lg border-2 border-dashed border-[#ddd] flex items-center justify-center cursor-pointer hover:border-[#c87941] hover:bg-[#faf9f7] transition-colors">
+          <label className="aspect-square rounded-lg border-2 border-dashed border-[#ddd] flex items-center justify-center cursor-pointer hover:border-[#1a1a1a] hover:bg-[#faf9f7] transition-colors">
             <span className="text-2xl text-[#888]">+</span>
             <input
               ref={fileInputRef}

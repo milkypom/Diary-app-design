@@ -66,7 +66,7 @@ export default function PostDetailModal({ memo, onClose, onEdit, onDelete, onRef
         <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-[#f0ede8] px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="text-[13px] text-[#9a9a9a]">My Diary</div>
-            <div className="px-2 py-1 rounded-full bg-[#f5f2ef] text-[12px] text-[#c87941]">{memo.tags?.[0] ? `#${memo.tags[0]}` : ''}</div>
+            <div className="px-2 py-1 rounded-full bg-[#f5f2ef] text-[12px] text-[#1a1a1a]">{memo.tags?.[0] ? `#${memo.tags[0]}` : ''}</div>
             <div className="text-[12px] text-[#777]">{memo.date || memo.createdAt}</div>
           </div>
 

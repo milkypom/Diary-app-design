@@ -228,7 +228,7 @@ export default function SearchPage({ onEdit, onRefresh, onSelectMemo }: Props) {
               id="bookmarked"
               checked={bookmarkedOnly}
               onChange={e => setBookmarkedOnly(e.target.checked)}
-              className="w-4 h-4 accent-[#c87941]"
+              className="w-4 h-4 accent-[#1a1a1a]"
             />
             <label htmlFor="bookmarked" className="text-[12px] text-[#666]">
               Bookmarked only
@@ -291,7 +291,7 @@ export default function SearchPage({ onEdit, onRefresh, onSelectMemo }: Props) {
           <p className="text-[14px] text-[#9a9a9a]">No results found</p>
           <button
             onClick={clearFilters}
-            className="text-[13px] text-[#c87941] font-medium"
+            className="text-[13px] text-[#1a1a1a] font-medium"
           >
             Clear filters
           </button>

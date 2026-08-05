@@ -1,4 +1,4 @@
-import type { Memo, EditorData, Comment, TagListStyle, Theme, Mood, Weather } from './types'
+import type { Memo, EditorData, Comment, Mood, Weather } from './types'
 
 const KEY = 'daylog_memos'
 const PROFILE_KEY = 'daylog_profile'
@@ -10,67 +10,6 @@ export interface Profile {
   avatar: string
   avatarEmoji: string
   avatarColor: string
-}
- 
-export function getTagListStyle(): TagListStyle {
-  try {
-    const data = localStorage.getItem(SETTINGS_KEY)
-    if (data) {
-      const settings = JSON.parse(data)
-      return settings.tagListStyle || 'circle'
-    }
-  } catch {
-    // ignore error
-  }
-  return 'circle'
-}
- 
-export function saveTagListStyle(tagListStyle: TagListStyle): boolean {
-  try {
-    const currentSettings = localStorage.getItem(SETTINGS_KEY)
-    const settings = currentSettings ? JSON.parse(currentSettings) : {}
-    settings.tagListStyle = tagListStyle
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
-    return true
-  } catch {
-    return false
-  }
-}
-
-export function getTheme(): Theme {
-  try {
-    const data = localStorage.getItem(SETTINGS_KEY)
-    if (data) {
-      const settings = JSON.parse(data)
-      return settings.theme || 'auto'
-    }
-  } catch {
-    // ignore error
-  }
-  return 'auto'
-}
-
-export function saveTheme(theme: Theme): boolean {
-  try {
-    const currentSettings = localStorage.getItem(SETTINGS_KEY)
-    const settings = currentSettings ? JSON.parse(currentSettings) : {}
-    settings.theme = theme
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
-    return true
-  } catch {
-    return false
-  }
-}
-
-export function getEffectiveTheme(): 'light' | 'dark' {
-  const savedTheme = getTheme()
-  if (savedTheme !== 'auto') return savedTheme
-  
-  // Check system preference
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    return 'dark'
-  }
-  return 'light'
 }
 
 export function getProfile(): Profile {
@@ -509,10 +448,6 @@ export interface ExportData {
   memos: Memo[]
   comments: Comment[]
   profile: Profile
-  settings: {
-    tagListStyle: TagListStyle
-    theme: Theme
-  }
   exportedAt: string
   version: string
 }
@@ -522,10 +457,6 @@ export function exportData(): ExportData {
     memos: getMemos(),
     comments: getAllComments(),
     profile: getProfile(),
-    settings: {
-      tagListStyle: getTagListStyle(),
-      theme: getTheme(),
-    },
     exportedAt: new Date().toISOString(),
     version: '1.0.0',
   }
@@ -553,15 +484,7 @@ export function importData(data: ExportData): { success: boolean; message: strin
     
     saveAllComments(data.comments)
     saveProfile(data.profile)
-    
-    if (data.settings?.tagListStyle) {
-      saveTagListStyle(data.settings.tagListStyle)
-    }
-    
-    if (data.settings?.theme) {
-      saveTheme(data.settings.theme)
-    }
-    
+
     return { success: true, message: 'Data imported successfully' }
   } catch (error) {
     return { success: false, message: `Import failed: ${error instanceof Error ? error.message : 'Unknown error'}` }

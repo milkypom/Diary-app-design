@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react"
 import type { Memo, Page } from "./lib/types"
-import { initSampleData, getMemo, deleteMemo, getTheme, getEffectiveTheme } from "./lib/storage"
+import { initSampleData, getMemo, deleteMemo } from "./lib/storage"
 import FeedPage from "./components/FeedPage"
 import SearchPage from "./components/SearchPage"
 import MyPage from "./components/MyPage"
@@ -29,36 +29,11 @@ export default function App() {
   // undefined = editor closed, null = new entry, Memo = editing
   const [editing, setEditing] = useState<Memo | null | undefined>(undefined)
   const [pageStack, setPageStack] = useState<Page[]>(["home"])
-  const [theme, setTheme] = useState<'light' | 'dark'>('light')
 
-  // Apply theme
+  // Remove dark mode class on mount
   useEffect(() => {
-    const savedTheme = getTheme()
-    const effectiveTheme = savedTheme === 'auto' ? getEffectiveTheme() : savedTheme
-    setTheme(effectiveTheme)
-    
-    if (effectiveTheme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-
-    // Listen for system theme changes when in auto mode
-    if (savedTheme === 'auto') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-      const handleChange = (e: MediaQueryListEvent) => {
-        const newTheme = e.matches ? 'dark' : 'light'
-        setTheme(newTheme)
-        if (newTheme === 'dark') {
-          document.documentElement.classList.add('dark')
-        } else {
-          document.documentElement.classList.remove('dark')
-        }
-      }
-      mediaQuery.addEventListener('change', handleChange)
-      return () => mediaQuery.removeEventListener('change', handleChange)
-    }
-  }, [refreshKey])
+    document.documentElement.classList.remove('dark')
+  }, [])
 
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), [])
   const openNew = () => setEditing(null)
@@ -106,25 +81,23 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen flex justify-center ${theme === 'dark' ? 'bg-[#1a1a1a]' : 'bg-[#e8e3dd]'}`}>
-      <div className={`w-full max-w-[480px] min-h-screen relative shadow-[0_0_40px_rgba(0,0,0,0.06)] ${theme === 'dark' ? 'bg-[#2d2d2d]' : 'bg-white'}`}>
+    <div className="min-h-screen flex justify-center bg-[#e8e3dd]">
+      <div className="w-full max-w-[480px] min-h-screen relative shadow-[0_0_40px_rgba(0,0,0,0.06)] bg-white">
         {/* Sticky header */}
         {!selectedMemoId && (
-          <header className={`sticky top-0 z-30 flex items-center justify-between px-5 py-4 backdrop-blur-sm border-b ${theme === 'dark' ? 'bg-[#2d2d2d]/95 border-[#3d3d3d]' : 'bg-white/95 border-[#f0ede8]'}`}>
+          <header className="sticky top-0 z-30 flex items-center justify-between px-5 py-4 backdrop-blur-sm border-b bg-white/95 border-[#f0ede8]">
           <div className="flex items-center gap-3">
             {(page === "settings" || page === "tagEdit") && (
               <button
                 onClick={page === "settings" ? handleBackFromSettings : handleBackFromTagEdit}
-                className={`w-8 h-8 flex items-center justify-center transition-colors text-lg ${theme === 'dark' ? 'text-[#a0a0a0] hover:text-[#f5f5f5]' : 'text-[#bbb] hover:text-[#555]'}`}
+                className="w-8 h-8 flex items-center justify-center transition-colors text-lg text-[#bbb] hover:text-[#555]"
                 aria-label="Back"
               >
                 ‹
               </button>
             )}
             <h1
-              className={`font-sans text-[19px] font-bold leading-none not-italic ${
-                theme === 'dark' ? 'text-[#f5f5f5]' : 'text-[#1a1a1a]'
-              }`}
+              className="font-sans text-[19px] font-bold leading-none not-italic text-[#1a1a1a]"
             >
               {PAGE_LABELS[page]}
             </h1>
@@ -132,7 +105,7 @@ export default function App() {
           {page === "my" && (
             <button
               onClick={handleSettingsClick}
-              className={`w-8 h-8 flex items-center justify-center transition-colors text-lg ${theme === 'dark' ? 'text-[#a0a0a0] hover:text-[#f5f5f5]' : 'text-[#bbb] hover:text-[#555]'}`}
+              className="w-8 h-8 flex items-center justify-center transition-colors text-lg text-[#bbb] hover:text-[#555]"
               aria-label="Settings"
             >
               ⚙️
