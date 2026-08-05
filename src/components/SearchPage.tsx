@@ -113,10 +113,10 @@ export default function SearchPage({ onEdit, onRefresh, onSelectMemo }: Props) {
   }
 
   return (
-    <div>
-      <div className="px-4 py-3">
+    <div className="space-y-3">
+      <div className="px-4 pt-3">
         <div className="relative">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#bbb] text-[15px] pointer-events-none">
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-[15px] pointer-events-none">
             🔍
           </span>
           <input
@@ -124,12 +124,12 @@ export default function SearchPage({ onEdit, onRefresh, onSelectMemo }: Props) {
             value={query}
             onChange={e => handleSimpleSearch(e.target.value)}
             placeholder="Search by title, content, or tag…"
-            className="w-full pl-10 pr-4 py-3 bg-[#f5f1ee] rounded-xl text-[13px] outline-none border border-transparent focus:border-[#ddd] focus:bg-white transition-all"
+            className="w-full pl-10 pr-14 py-3 bg-white dark:bg-zinc-950 text-black dark:text-white text-[13px] outline-none border-2 border-black dark:border-white focus:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all font-mono uppercase"
             autoFocus
           />
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#bbb] hover:text-[#555] transition-colors text-sm"
+            className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 border border-black dark:border-white bg-zinc-100 dark:bg-zinc-900 text-black dark:text-white hover:bg-black hover:text-white transition-colors text-[10px] font-black"
             aria-label="Toggle filters"
           >
             {showFilters ? '✕' : '⚙️'}
@@ -139,20 +139,20 @@ export default function SearchPage({ onEdit, onRefresh, onSelectMemo }: Props) {
 
       {/* Advanced Filters */}
       {showFilters && (
-        <div className="px-4 py-3 border-b border-[#f0ede8] space-y-4">
+        <div className="mx-4 p-4 border-2 border-black dark:border-white bg-white dark:bg-zinc-950 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] space-y-4 font-mono">
           {/* Tags */}
           {allTags.length > 0 && (
             <div>
-              <p className="text-[12px] text-[#999] mb-2">Tags</p>
+              <p className="text-[10px] font-black text-zinc-500 mb-2 uppercase">// TAG_FILTER</p>
               <div className="flex flex-wrap gap-2">
                 {allTags.map(tag => (
                   <button
                     key={tag}
                     onClick={() => toggleTag(tag)}
-                    className={`px-3 py-1 rounded-full text-[11px] transition-all ${
+                    className={`px-3 py-1 border text-[10px] font-bold uppercase transition-all ${
                       selectedTags.includes(tag)
-                        ? 'bg-[#1a1a1a] text-white'
-                        : 'bg-[#faf9f7] text-[#666] hover:bg-[#f0ede8]'
+                        ? 'bg-black text-white border-black dark:border-white'
+                        : 'bg-transparent text-zinc-600 border-zinc-400 hover:bg-black hover:text-white hover:border-black'
                     }`}
                   >
                     #{tag}
@@ -164,16 +164,16 @@ export default function SearchPage({ onEdit, onRefresh, onSelectMemo }: Props) {
 
           {/* Mood */}
           <div>
-            <p className="text-[12px] text-[#999] mb-2">Mood</p>
+            <p className="text-[10px] font-black text-zinc-500 mb-2 uppercase">// MOOD_FILTER</p>
             <div className="flex flex-wrap gap-2">
               {moodOptions.map(option => (
                 <button
                   key={option.value}
                   onClick={() => setSelectedMood(option.value)}
-                  className={`px-3 py-1 rounded-full text-[11px] transition-all ${
+                  className={`px-3 py-1 border text-[10px] font-bold uppercase transition-all ${
                     selectedMood === option.value
-                      ? 'bg-[#1a1a1a] text-white'
-                      : 'bg-[#faf9f7] text-[#666] hover:bg-[#f0ede8]'
+                      ? 'bg-black text-white border-black dark:border-white'
+                      : 'bg-transparent text-zinc-600 border-zinc-400 hover:bg-black hover:text-white hover:border-black'
                   }`}
                 >
                   {option.icon} {option.label}
@@ -184,16 +184,16 @@ export default function SearchPage({ onEdit, onRefresh, onSelectMemo }: Props) {
 
           {/* Weather */}
           <div>
-            <p className="text-[12px] text-[#999] mb-2">Weather</p>
+            <p className="text-[10px] font-black text-zinc-500 mb-2 uppercase">// WEATHER_FILTER</p>
             <div className="flex flex-wrap gap-2">
               {weatherOptions.map(option => (
                 <button
                   key={option.value}
                   onClick={() => setSelectedWeather(option.value)}
-                  className={`px-3 py-1 rounded-full text-[11px] transition-all ${
+                  className={`px-3 py-1 border text-[10px] font-bold uppercase transition-all ${
                     selectedWeather === option.value
-                      ? 'bg-[#1a1a1a] text-white'
-                      : 'bg-[#faf9f7] text-[#666] hover:bg-[#f0ede8]'
+                      ? 'bg-black text-white border-black dark:border-white'
+                      : 'bg-transparent text-zinc-600 border-zinc-400 hover:bg-black hover:text-white hover:border-black'
                   }`}
                 >
                   {option.icon} {option.label}
@@ -204,19 +204,19 @@ export default function SearchPage({ onEdit, onRefresh, onSelectMemo }: Props) {
 
           {/* Date Range */}
           <div>
-            <p className="text-[12px] text-[#999] mb-2">Date Range</p>
+            <p className="text-[10px] font-black text-zinc-500 mb-2 uppercase">// DATE_RANGE</p>
             <div className="flex gap-2">
               <input
                 type="date"
                 value={dateFrom}
                 onChange={e => setDateFrom(e.target.value)}
-                className="flex-1 px-3 py-2 bg-[#faf9f7] rounded-lg text-[12px] outline-none border border-[#e8e3dd] focus:border-[#bbb]"
+                className="flex-1 px-3 py-2 bg-transparent text-[12px] outline-none border border-zinc-500 focus:border-black dark:focus:border-white"
               />
               <input
                 type="date"
                 value={dateTo}
                 onChange={e => setDateTo(e.target.value)}
-                className="flex-1 px-3 py-2 bg-[#faf9f7] rounded-lg text-[12px] outline-none border border-[#e8e3dd] focus:border-[#bbb]"
+                className="flex-1 px-3 py-2 bg-transparent text-[12px] outline-none border border-zinc-500 focus:border-black dark:focus:border-white"
               />
             </div>
           </div>
@@ -230,19 +230,19 @@ export default function SearchPage({ onEdit, onRefresh, onSelectMemo }: Props) {
               onChange={e => setBookmarkedOnly(e.target.checked)}
               className="w-4 h-4 accent-[#1a1a1a]"
             />
-            <label htmlFor="bookmarked" className="text-[12px] text-[#666]">
-              Bookmarked only
+            <label htmlFor="bookmarked" className="text-[11px] font-bold text-zinc-600 uppercase">
+              BOOKMARKED_ONLY
             </label>
           </div>
 
           {/* Sort Options */}
           <div>
-            <p className="text-[12px] text-[#999] mb-2">Sort by</p>
+            <p className="text-[10px] font-black text-zinc-500 mb-2 uppercase">// SORT_ORDER</p>
             <div className="flex gap-2">
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as 'date' | 'title' | 'modified')}
-                className="flex-1 px-3 py-2 bg-[#faf9f7] rounded-lg text-[12px] outline-none border border-[#e8e3dd] focus:border-[#bbb]"
+                className="flex-1 px-3 py-2 bg-transparent text-[12px] outline-none border border-zinc-500 focus:border-black dark:focus:border-white"
               >
                 <option value="date">Date</option>
                 <option value="title">Title</option>
@@ -251,7 +251,7 @@ export default function SearchPage({ onEdit, onRefresh, onSelectMemo }: Props) {
               <select
                 value={sortOrder}
                 onChange={e => setSortOrder(e.target.value as 'asc' | 'desc')}
-                className="flex-1 px-3 py-2 bg-[#faf9f7] rounded-lg text-[12px] outline-none border border-[#e8e3dd] focus:border-[#bbb]"
+                className="flex-1 px-3 py-2 bg-transparent text-[12px] outline-none border border-zinc-500 focus:border-black dark:focus:border-white"
               >
                 <option value="desc">Newest First</option>
                 <option value="asc">Oldest First</option>
@@ -263,13 +263,13 @@ export default function SearchPage({ onEdit, onRefresh, onSelectMemo }: Props) {
           <div className="flex gap-2">
             <button
               onClick={handleSearch}
-              className="flex-1 px-4 py-2 bg-[#1a1a1a] text-white text-[13px] font-medium rounded-xl hover:bg-[#333] transition-colors"
+              className="flex-1 px-4 py-2 bg-black text-white border-2 border-black text-[11px] font-black uppercase hover:bg-zinc-700 transition-colors"
             >
               Search
             </button>
             <button
               onClick={clearFilters}
-              className="px-4 py-2 bg-[#faf9f7] text-[#1a1a1a] text-[13px] font-medium rounded-xl hover:bg-[#f0ede8] transition-colors"
+              className="px-4 py-2 bg-transparent text-black dark:text-white border-2 border-black dark:border-white text-[11px] font-black uppercase hover:bg-black hover:text-white transition-colors"
             >
               Clear
             </button>
@@ -278,7 +278,7 @@ export default function SearchPage({ onEdit, onRefresh, onSelectMemo }: Props) {
       )}
 
       {!searched && (
-        <div className="flex flex-col items-center py-16 gap-2">
+        <div className="mx-4 flex flex-col items-center py-14 gap-2 border-2 border-dashed border-zinc-400 text-center">
           <span className="text-5xl opacity-20">🔍</span>
           <p className="text-[14px] text-[#9a9a9a]">Search your diary entries</p>
           <p className="text-[12px] text-[#bbb]">Use ⚙️ for advanced filters</p>
@@ -286,7 +286,7 @@ export default function SearchPage({ onEdit, onRefresh, onSelectMemo }: Props) {
       )}
 
       {searched && results.length === 0 && (
-        <div className="flex flex-col items-center py-16 gap-2">
+        <div className="mx-4 flex flex-col items-center py-14 gap-2 border-2 border-dashed border-zinc-400 text-center">
           <span className="text-4xl opacity-30">📭</span>
           <p className="text-[14px] text-[#9a9a9a]">No results found</p>
           <button
@@ -299,36 +299,36 @@ export default function SearchPage({ onEdit, onRefresh, onSelectMemo }: Props) {
       )}
 
       {searched && results.length > 0 && (
-        <div className="px-4 py-2">
-          <p className="text-[12px] text-[#999]">{results.length} result{results.length !== 1 ? 's' : ''} found</p>
+        <div className="px-4 py-1">
+          <p className="text-[10px] font-black tracking-widest text-zinc-500 uppercase">[ {results.length} MATCH{results.length !== 1 ? 'ES' : ''}_FOUND ]</p>
         </div>
       )}
 
       {searched && results.length > 0 && (
-        <div className="border-t border-[#f0ede8]">
+        <div className="mx-4 border-2 border-black dark:border-white bg-white dark:bg-zinc-950 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
           {results.map(memo => (
             <button
               key={memo.id}
-              className="w-full text-left px-5 py-3.5 border-b border-[#f0ede8] hover:bg-[#faf9f7] transition-colors flex items-center gap-3"
+              className="w-full text-left px-3 py-3 border-b last:border-b-0 border-black dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors flex items-center gap-3"
               onClick={() => onSelectMemo ? onSelectMemo(memo.id) : onEdit(memo)}
             >
               {memo.images?.[0] ? (
                 <img
                   src={memo.images[0]}
                   alt=""
-                  className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                  className="w-11 h-11 border border-black dark:border-white object-cover flex-shrink-0 grayscale"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-lg bg-[#f5f0eb] flex items-center justify-center flex-shrink-0 text-lg">
+                <div className="w-11 h-11 border border-black dark:border-white bg-black text-white flex items-center justify-center flex-shrink-0 text-lg">
                   {memo.mood ? MOOD_ICON[memo.mood] : '📝'}
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="italic text-[14px] font-semibold text-[#1a1a1a] leading-snug truncate">
+                <p className="text-[12px] font-black text-black dark:text-white uppercase leading-snug truncate">
                   {memo.title || 'Untitled'}
                 </p>
-                <p className="text-[12px] text-[#9a9a9a] mt-0.5 truncate">{memo.content}</p>
-                <p className="text-[11px] text-[#bbb] mt-1">
+                <p className="text-[11px] text-zinc-500 mt-0.5 truncate">{memo.content}</p>
+                <p className="text-[9px] font-bold text-zinc-400 mt-1 uppercase">
                   {memo.date || memo.createdAt?.split('T')[0]}
                 </p>
               </div>

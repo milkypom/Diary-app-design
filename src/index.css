@@ -1,100 +1,33 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Inter:wght@300;400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 @theme inline {
-  --font-serif: 'Playfair Display', Georgia, serif;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Dark mode styles */
-.dark {
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #2d2d2d;
-  --bg-tertiary: #3d3d3d;
-  --text-primary: #f5f5f5;
-  --text-secondary: #a0a0a0;
-  --border-color: #3d3d3d;
+/* Y2K Scrollbar styling */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-.dark body {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+/* Hide scrollbars globally but keep scrollability */
+html {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
 }
 
-.dark .bg-white {
-  background-color: var(--bg-secondary) !important;
-}
-
-.dark .bg-[#faf9f7] {
-  background-color: var(--bg-tertiary) !important;
-}
-
-.dark .bg-[#f5f0eb] {
-  background-color: var(--bg-tertiary) !important;
-}
-
-.dark .bg-[#e8e3dd] {
-  background-color: var(--border-color) !important;
-}
-
-.dark .text-[#1a1a1a] {
-  color: var(--text-primary) !important;
-}
-
-.dark .text-[#9a9a9a] {
-  color: var(--text-secondary) !important;
-}
-
-.dark .text-[#bbb] {
-  color: var(--text-secondary) !important;
-}
-
-.dark .border-[#e8e3dd] {
-  border-color: var(--border-color) !important;
-}
-
-.dark .border-[#f0ede8] {
-  border-color: var(--border-color) !important;
-}
-
-.dark .border-white {
-  border-color: var(--border-color) !important;
-}
-
-.dark .border-[#1a1a1a] {
-  border-color: var(--text-primary) !important;
-}
-
-.dark .hover\:bg-white:hover {
-  background-color: var(--bg-tertiary) !important;
-}
-
-.dark .hover\:bg-[#f0ede8]:hover {
-  background-color: var(--bg-tertiary) !important;
-}
-
-.dark .hover\:text-[#555]:hover {
-  color: var(--text-primary) !important;
-}
-
-.dark .hover\:text-[#777]:hover {
-  color: var(--text-primary) !important;
-}
-
-.dark .focus\:bg-white:focus {
-  background-color: var(--bg-tertiary) !important;
-}
-
-.dark .focus\:border-[#bbb]:focus {
-  border-color: var(--text-secondary) !important;
-}
-
+/* Y2K Animation */
 @keyframes slideUp {
   from {
     transform: translateY(48px);
@@ -106,10 +39,11 @@ body {
   }
 }
 
-/* Hide scrollbars globally but keep scrollability */
-html {
-  scrollbar-width: none;
-}
-html::-webkit-scrollbar {
-  display: none;
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }

@@ -259,6 +259,25 @@ export default function StoryViewer({
           </div>
         )}
 
+        <button
+          className="story-post-summary"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenPost?.(current.id);
+          }}
+          aria-label="Open full post"
+        >
+          <div className="story-post-summary-meta">
+            <span>POST_CONTENT.LOG</span>
+            {current.date && <span>{current.date}</span>}
+          </div>
+          {current.title && <strong className="story-post-summary-title">{current.title}</strong>}
+          <p className="story-post-summary-body">
+            {current.content || "No text recorded for this entry."}
+          </p>
+          <span className="story-post-summary-open">OPEN_FULL_POST →</span>
+        </button>
+
         {/* Caption toggle button */}
         {!showCaption && (
           <button

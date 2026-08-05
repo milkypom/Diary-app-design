@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { getMemos } from "../lib/storage"
 import type { Memo } from "../lib/types"
 import PostCard from "./PostCard"
+import { useTheme } from '../contexts/ThemeContext'
 
 interface Props {
   refreshKey: number
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function BookmarkPage({ refreshKey, onEdit, onRefresh, onSelectMemo }: Props) {
+  const { theme } = useTheme()
   const [memos, setMemos] = useState<Memo[]>([])
 
   useEffect(() => {
@@ -29,9 +31,9 @@ export default function BookmarkPage({ refreshKey, onEdit, onRefresh, onSelectMe
       {memos.length === 0 ? (
         <div className="flex flex-col items-center py-20 gap-3">
           <span className="text-5xl opacity-20">🔖</span>
-          <p className="text-[14px] text-[#9a9a9a]">No saved entries yet</p>
-          <p className="text-[12px] text-[#bbb]">
-            Tap the bookmark icon on any entry to save it
+          <p className={`text-[14px] font-bold ${theme.textSecondary}`}>[ NO_SAVED_LOGS_YET ]</p>
+          <p className={`text-[12px] font-bold ${theme.textSecondary}`}>
+            TAP_THE_BOOKMARK_ICON_ON_ANY_ENTRY_TO_SAVE_IT
           </p>
         </div>
       ) : (

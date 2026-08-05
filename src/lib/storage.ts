@@ -1,4 +1,5 @@
 import type { Memo, EditorData, Comment, Mood, Weather } from './types'
+import { getStoredImage, isStoredImage, resolveImageUrl, storeImage } from './imageStore'
 
 const KEY = 'daylog_memos'
 const PROFILE_KEY = 'daylog_profile'
@@ -42,13 +43,36 @@ export function saveProfile(profile: Profile): boolean {
   }
 }
 
-export function getMemos(): Memo[] {
+function getStoredMemos(): Memo[] {
   try {
     const data = localStorage.getItem(KEY)
     return data ? JSON.parse(data) : []
   } catch {
     return []
   }
+}
+
+export function getMemos(): Memo[] {
+  return getStoredMemos().map(memo => ({
+    ...memo,
+    images: (memo.images || []).map(resolveImageUrl),
+  }))
+}
+
+/** Moves legacy Base64 uploads out of localStorage on the next app launch. */
+export async function migrateStoredImages(): Promise<void> {
+  const memos = getStoredMemos()
+  let changed = false
+  const migrated = await Promise.all(memos.map(async memo => ({
+    ...memo,
+    images: await Promise.all((memo.images || []).map(async image => {
+      if (!image.startsWith('data:image/')) return image
+      const blob = await fetch(image).then(response => response.blob())
+      changed = true
+      return storeImage(new File([blob], 'migrated-image', { type: blob.type }))
+    })),
+  })))
+  if (changed) saveMemos(migrated)
 }
 
 function saveMemos(memos: Memo[]): boolean {
@@ -71,7 +95,7 @@ export function getMemo(id: number): Memo | null {
 }
 
 export function addMemo(data: EditorData): Memo {
-  const memos = getMemos()
+  const memos = getStoredMemos()
   const memo: Memo = {
     id: Date.now(),
     title: data.title || '',
@@ -92,7 +116,7 @@ export function addMemo(data: EditorData): Memo {
 }
 
 export function updateMemo(id: number, data: EditorData): boolean {
-  const memos = getMemos()
+  const memos = getStoredMemos()
   const idx = memos.findIndex(m => m.id === id)
   if (idx === -1) return false
   memos[idx] = {
@@ -112,7 +136,7 @@ export function updateMemo(id: number, data: EditorData): boolean {
 }
 
 export function deleteMemo(id: number): boolean {
-  const memos = getMemos()
+  const memos = getStoredMemos()
   const memo = memos.find(m => m.id === id)
   if (!memo) return false
   memo.deleted = true
@@ -121,7 +145,7 @@ export function deleteMemo(id: number): boolean {
 }
 
 export function restoreMemo(id: number): boolean {
-  const memos = getMemos()
+  const memos = getStoredMemos()
   const memo = memos.find(m => m.id === id)
   if (!memo) return false
   memo.deleted = false
@@ -134,7 +158,7 @@ export function getDeletedMemos(): Memo[] {
 }
 
 export function permanentDeleteMemo(id: number): boolean {
-  const memos = getMemos()
+  const memos = getStoredMemos()
   const idx = memos.findIndex(m => m.id === id)
   if (idx === -1) return false
   memos.splice(idx, 1)
@@ -142,12 +166,12 @@ export function permanentDeleteMemo(id: number): boolean {
 }
 
 export function emptyTrash(): boolean {
-  const memos = getMemos().filter(m => !m.deleted)
+  const memos = getStoredMemos().filter(m => !m.deleted)
   return saveMemos(memos)
 }
 
 export function toggleBookmark(id: number): boolean {
-  const memos = getMemos()
+  const memos = getStoredMemos()
   const memo = memos.find(m => m.id === id)
   if (!memo) return false
   memo.bookmark = !memo.bookmark
@@ -275,7 +299,7 @@ export function renameTag(oldTag: string, newTag: string): boolean {
   const cleanNewTag = newTag.trim()
   if (cleanOldTag === cleanNewTag) return false
 
-  const memos = getMemos()
+  const memos = getStoredMemos()
   let changed = false
   memos.forEach(memo => {
     if (memo.tags && memo.tags.includes(cleanOldTag)) {
@@ -292,7 +316,7 @@ export function renameTag(oldTag: string, newTag: string): boolean {
 export function deleteTag(tag: string): boolean {
   if (!tag.trim()) return false
   const cleanTag = tag.trim()
-  const memos = getMemos()
+  const memos = getStoredMemos()
   let changed = false
   memos.forEach(memo => {
     if (memo.tags && memo.tags.includes(cleanTag)) {
@@ -452,9 +476,26 @@ export interface ExportData {
   version: string
 }
 
-export function exportData(): ExportData {
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(blob)
+  })
+}
+
+export async function exportData(): Promise<ExportData> {
+  const memos = await Promise.all(getStoredMemos().map(async memo => ({
+    ...memo,
+    images: await Promise.all((memo.images || []).map(async image => {
+      if (!isStoredImage(image)) return image
+      const blob = await getStoredImage(image)
+      return blob ? blobToDataUrl(blob) : image
+    })),
+  })))
   return {
-    memos: getMemos(),
+    memos,
     comments: getAllComments(),
     profile: getProfile(),
     exportedAt: new Date().toISOString(),
@@ -462,7 +503,7 @@ export function exportData(): ExportData {
   }
 }
 
-export function importData(data: ExportData): { success: boolean; message: string } {
+export async function importData(data: ExportData): Promise<{ success: boolean; message: string }> {
   try {
     // Validate data structure
     if (!data.memos || !Array.isArray(data.memos)) {
@@ -477,8 +518,17 @@ export function importData(data: ExportData): { success: boolean; message: strin
       return { success: false, message: 'Invalid data format: missing profile' }
     }
     
-    // Save data
-    if (!saveMemos(data.memos)) {
+    const memos = await Promise.all(data.memos.map(async memo => ({
+      ...memo,
+      images: await Promise.all((memo.images || []).map(async image => {
+        if (!image.startsWith('data:image/')) return image
+        const blob = await fetch(image).then(response => response.blob())
+        return storeImage(new File([blob], 'imported-image', { type: blob.type }))
+      })),
+    })))
+
+    // Save only the lightweight image references in localStorage.
+    if (!saveMemos(memos)) {
       return { success: false, message: 'Failed to save memos (storage quota exceeded)' }
     }
     
@@ -491,8 +541,8 @@ export function importData(data: ExportData): { success: boolean; message: strin
   }
 }
 
-export function downloadExportFile(): void {
-  const data = exportData()
+export async function downloadExportFile(): Promise<void> {
+  const data = await exportData()
   const json = JSON.stringify(data, null, 2)
   const blob = new Blob([json], { type: 'application/json' })
   const url = URL.createObjectURL(blob)

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import type { Memo, Comment } from '../lib/types'
 import { toggleBookmark, deleteMemo, getComments, addComment, deleteComment, getProfile } from '../lib/storage'
+import { useTheme } from '../contexts/ThemeContext'
+import { PHOTO_FILTERS } from '../lib/theme'
 
 const WEATHER_ICON: Record<string, string> = {
   sunny: '☀️',
@@ -72,6 +74,7 @@ interface Props {
 }
 
 export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Props) {
+  const { theme } = useTheme()
   const [imgIdx, setImgIdx] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const [liked, setLiked] = useState(false)
@@ -85,6 +88,7 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
   const [touchStart, setTouchStart] = useState(0)
   const [touchEnd, setTouchEnd] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [selectedFilter, setSelectedFilter] = useState('monoHigh')
 
   useEffect(() => {
     setBookmarked(memo.bookmark)
@@ -155,55 +159,58 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
     }
   }
 
+  const filterObj = PHOTO_FILTERS.find(f => f.id === selectedFilter) || PHOTO_FILTERS[0]
+
   return (
-    <article id={id} className="bg-white border-b border-[#f0ede8] transition-all duration-300">
+    <article id={id} className={`border-2 ${theme.border} ${theme.cardBg} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden transition mb-4`}>
       {/* Header */}
-      <div className="flex items-center px-4 py-3 gap-3">
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-[22px] flex-shrink-0 select-none"
-          style={{ background: avatarColor }}
-        >
-          {memo.mood ? MOOD_ICON[memo.mood] : '📝'}
+      <div className={`p-3.5 flex items-center justify-between border-b-2 border-black dark:border-white bg-zinc-100 dark:bg-zinc-900`}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 border border-black dark:border-white bg-black text-white flex items-center justify-center shrink-0 text-sm">
+            {memo.mood ? MOOD_ICON[memo.mood] : '📝'}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-black text-xs tracking-wider">{new Date(displayDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}</h3>
+              <span className={`text-[9px] px-1.5 py-0.5 font-bold uppercase bg-zinc-800 text-zinc-100`}>
+                {memo.mood || 'NORMAL'}
+              </span>
+            </div>
+            <div className={`flex items-center gap-2 text-[10px] ${theme.textSecondary} mt-0.5 font-bold`}>
+              <span className="flex items-center gap-0.5">
+                📍 {memo.location || 'MONO_SPACE_00'}
+              </span>
+              <span>•</span>
+              <span>{memo.weather ? WEATHER_ICON[memo.weather] : '☀️'} {memo.weather || 'CLEAR'}</span>
+            </div>
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-semibold leading-none text-[#1a1a1a]">{profile.name}</p>
-          <button
-            className="text-[11px] text-[#9a9a9a] mt-0.5 text-left hover:text-[#666] transition-colors"
-            onClick={() => setShowFullTime(t => !t)}
-            title={formatFullTime(displayDate)}
-          >
-            {showFullTime ? formatFullTime(displayDate) : relativeTime(displayDate)}
-          </button>
-        </div>
+
         {/* Menu */}
         <div className="relative ml-1">
           <button
-            className="w-8 h-8 flex items-center justify-center transition-transform active:scale-110"
+            className={`w-8 h-8 border border-black dark:border-white ${theme.chipBg} hover:bg-black hover:text-white transition flex items-center justify-center`}
             onClick={() => setMenuOpen(m => !m)}
             aria-label="Post options"
           >
-            <img
-              src="/img/post options.png"
-              alt="Post options"
-              className="w-5 h-5 object-contain opacity-60 hover:opacity-100 transition-opacity"
-            />
+            ⋮
           </button>
           {menuOpen && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-              <div className="absolute right-0 top-full z-20 bg-white rounded-2xl shadow-xl border border-[#f0ede8] overflow-hidden min-w-[130px]">
+              <div className={`absolute right-0 top-full z-20 ${theme.cardBg} border-2 ${theme.border} shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden min-w-[130px]`}>
                 <button
-                  className="w-full px-4 py-3 text-left text-[13px] text-[#1a1a1a] hover:bg-[#faf9f7] transition-colors"
+                  className={`w-full px-4 py-3 text-left text-xs font-bold ${theme.textPrimary} hover:bg-black hover:text-white transition-colors`}
                   onClick={() => { setMenuOpen(false); onEdit(memo) }}
                 >
-                  Edit entry
+                  EDIT_LOG
                 </button>
-                <div className="h-px bg-[#f0ede8]" />
+                <div className={`h-px ${theme.border}`} />
                 <button
-                  className="w-full px-4 py-3 text-left text-[13px] text-red-400 hover:bg-red-50 transition-colors"
+                  className="w-full px-4 py-3 text-left text-xs font-bold text-red-400 hover:bg-red-900 hover:text-white transition-colors"
                   onClick={() => { setMenuOpen(false); handleDelete() }}
                 >
-                  Delete
+                  DELETE_LOG
                 </button>
               </div>
             </>
@@ -214,7 +221,7 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
       {/* Image slider */}
       {images.length > 0 ? (
         <div
-          className="relative w-full aspect-square overflow-hidden bg-[#f5f0eb]"
+          className="relative aspect-square bg-black overflow-hidden cursor-pointer group border-b-2 border-black dark:border-white"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -224,11 +231,18 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
               key={i}
               src={src}
               alt={`Photo ${i + 1}`}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+              className={`absolute inset-0 w-full h-full object-cover transition duration-300 group-hover:scale-105 ${
                 i === imgIdx ? 'opacity-100' : 'opacity-0 pointer-events-none'
               }`}
+              style={{ filter: filterObj.filterCss }}
             />
           ))}
+          <div className="absolute top-3 right-3 bg-black text-white border border-white text-[9px] px-2 py-0.5 font-bold uppercase tracking-widest">
+            [ {filterObj.name} ]
+          </div>
+          <div className="absolute bottom-3 left-3 bg-black/80 text-zinc-300 font-mono text-[10px] px-2 py-0.5 border border-zinc-700 tracking-widest">
+            REC • {displayDate.replace(/-/g, '.')}
+          </div>
           {images.length > 1 && (
             <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
               {images.map((_, i) => (
@@ -248,108 +262,100 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
           )}
         </div>
       ) : (
-        <div className="w-full aspect-square bg-gradient-to-br from-[#fdf4f0] to-[#f0e8de] flex items-center justify-center">
+        <div className="w-full aspect-square bg-black flex items-center justify-center border-b-2 border-black dark:border-white">
           <span className="text-5xl opacity-20">📷</span>
         </div>
       )}
 
       {/* Actions row */}
-      <div className="flex items-center px-4 pt-3 pb-1">
-        <div className="flex items-center gap-4 flex-1">
+      <div className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              className="flex items-center gap-1.5 text-xs font-bold"
+              onClick={() => setLiked(l => !l)}
+              aria-label="Like"
+            >
+              <img
+                src={liked ? '/img/heart_fill.png' : '/img/heart_line.png'}
+                alt={liked ? 'Liked' : 'Not liked'}
+                className="w-6 h-6 object-contain transition-transform active:scale-125 select-none"
+              />
+              <span>{likeCount}</span>
+            </button>
+            <button
+              className="flex items-center gap-1.5 text-xs font-bold text-zinc-500 hover:text-black dark:hover:text-white"
+              onClick={toggleComments}
+              aria-label="Comments"
+            >
+              <span className="text-lg">💬</span>
+              <span>{comments.length > 0 ? comments.length : getComments(memo.id).length}</span>
+            </button>
+          </div>
           <button
-            className="flex items-center gap-1.5"
-            onClick={() => setLiked(l => !l)}
-            aria-label="Like"
+            className="w-6 h-6 transition-transform active:scale-125 select-none"
+            onClick={handleBookmark}
+            aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark'}
           >
             <img
-              src={liked ? '/img/heart_fill.png' : '/img/heart_line.png'}
-              alt={liked ? 'Liked' : 'Not liked'}
-              className="w-6 h-6 object-contain transition-transform active:scale-125 select-none"
+              src={bookmarked ? '/img/saved_on.png' : '/img/saved_off.png'}
+              alt={bookmarked ? 'Bookmarked' : 'Not bookmarked'}
+              className="w-full h-full object-contain"
             />
-            <span className="text-[12px] text-[#9a9a9a] font-medium tabular-nums">{likeCount}</span>
-          </button>
-          <button
-            className="flex items-center gap-1.5"
-            onClick={toggleComments}
-            aria-label="Comments"
-          >
-            <span className={`text-[19px] leading-none select-none transition-transform active:scale-110 ${commentOpen ? 'opacity-100' : 'opacity-70'}`}>
-              💬
-            </span>
-            <span className={`text-[12px] font-medium tabular-nums transition-colors ${commentOpen ? 'text-[#1a1a1a]' : 'text-[#9a9a9a]'}`}>
-              {comments.length > 0 ? comments.length : getComments(memo.id).length}
-            </span>
           </button>
         </div>
-        <button
-          className="w-6 h-6 transition-transform active:scale-125 select-none"
-          onClick={handleBookmark}
-          aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark'}
-        >
-          <img
-            src={bookmarked ? '/img/saved_on.png' : '/img/saved_off.png'}
-            alt={bookmarked ? 'Bookmarked' : 'Not bookmarked'}
-            className="w-full h-full object-contain"
-          />
-        </button>
-      </div>
 
-      {/* Text content */}
-      <div className="px-4 pb-4 pt-1">
-        {memo.title && (
-          <h2 className="text-[15px] font-semibold italic text-[#1a1a1a] mb-1.5 leading-snug flex items-center gap-1.5">
-            <span>{memo.title}</span>
-            {memo.weather && <span className="text-[14px]" title={memo.weather}>{WEATHER_ICON[memo.weather]}</span>}
-          </h2>
-        )}
-        {memo.content && (
-          <p className="text-[13px] text-[#555] leading-relaxed">
-            {displayContent}
-            {isLong && (
-              <button
-                className="ml-1 text-[#9a9a9a] font-medium hover:text-[#555] transition-colors"
-                onClick={() => setExpanded(e => !e)}
-              >
-                {expanded ? 'less' : 'more'}
-              </button>
-            )}
-          </p>
-        )}
-        {memo.tags?.length > 0 && (
-          <div className="flex flex-wrap gap-x-2 gap-y-1 mt-2.5">
-            {memo.tags.map(tag => (
-              <button
-                key={tag}
-                className="text-[12px] text-[#1a1a1a] hover:text-[#333] transition-colors font-medium"
-                onClick={() => onTagClick?.(tag)}
-              >
-                #{tag}
-              </button>
-            ))}
-          </div>
-        )}
-        {memo.location && (
-          <p className="text-[11px] text-[#9a9a9a] mt-2 flex items-center gap-1">
-            <span>📍</span>{memo.location}
-          </p>
-        )}
+        {/* Text content */}
+        <div>
+          {memo.title && (
+            <h2 className="font-extrabold text-sm md:text-base tracking-wide mb-1 uppercase">
+              [ {memo.title} ]
+            </h2>
+          )}
+          {memo.content && (
+            <p className={`text-xs leading-relaxed ${theme.textSecondary} whitespace-pre-wrap`}>
+              {displayContent}
+              {isLong && (
+                <button
+                  className={`ml-1 font-bold hover:text-black dark:hover:text-white transition-colors`}
+                  onClick={() => setExpanded(e => !e)}
+                >
+                  {expanded ? '[COLLAPSE]' : '[EXPAND]'}
+                </button>
+              )}
+            </p>
+          )}
+          {memo.tags?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {memo.tags.map(tag => (
+                <button
+                  key={tag}
+                  className={`text-[10px] px-2 py-0.5 border ${theme.border} ${theme.chipBg} font-bold uppercase hover:bg-black hover:text-white transition`}
+                  onClick={() => onTagClick?.(tag)}
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Comment modal */}
       {commentOpen && (
         <div className="fixed inset-0 z-50 flex items-end" onClick={() => setCommentOpen(false)}>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-xs" />
           <div
-            className="relative w-full bg-white rounded-t-3xl shadow-2xl flex flex-col"
+            className={`relative w-full border-2 border-white bg-black text-white shadow-[8px_8px_0px_0px_rgba(255,255,255,0.4)] overflow-hidden my-8 font-mono`}
             style={{ maxHeight: '75vh', animation: 'slideUp 0.28s ease' }}
             onClick={e => e.stopPropagation()}
           >
             {/* Modal header */}
-            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[#f0ede8] flex-shrink-0">
-              <div className="w-10 h-1 bg-[#e0dbd5] rounded-full absolute top-2.5 left-1/2 -translate-x-1/2" />
-              <span className="text-[14px] font-semibold text-[#1a1a1a]">Comments</span>
+            <div className={`flex items-center justify-between px-5 pt-4 pb-3 border-b border-zinc-800 flex-shrink-0`}>
+              <div className="w-10 h-1 bg-zinc-700 rounded-full absolute top-2.5 left-1/2 -translate-x-1/2" />
+              <span className="text-[14px] font-black tracking-widest uppercase">[ MEMO_LOGS ]</span>
               <button
-                className="w-7 h-7 flex items-center justify-center text-[#bbb] hover:text-[#555] transition-colors rounded-full bg-[#f5f2ef]"
+                className={`w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-white transition-colors border border-zinc-700 bg-zinc-900`}
                 onClick={() => setCommentOpen(false)}
                 aria-label="Close"
               >
@@ -362,35 +368,26 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
               {comments.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 gap-2">
                   <span className="text-3xl opacity-30">💬</span>
-                  <p className="text-[13px] text-[#bbb]">No comments yet. Be the first!</p>
+                  <p className="text-[13px] text-zinc-400 font-bold">[ NO_MEMOS_YET ]</p>
                 </div>
               ) : (
-                <ul className="space-y-4">
+                <ul className="space-y-2">
                   {comments.map(c => (
-                    <li key={c.id} className="flex items-start gap-3 group">
-                      <div
-                        className={`w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5 bg-gradient-to-br ${profile.avatarColor} flex items-center justify-center`}
-                      >
-                        {profile.avatar ? (
-                          <img src={profile.avatar} alt="" className="w-full h-full rounded-full object-cover" />
-                        ) : (
-                          <span className="text-[18px]">{profile.avatarEmoji}</span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-[13px] font-semibold text-[#1a1a1a]">{profile.name}</span>
-                          <span className="text-[11px] text-[#bbb]">{commentRelativeTime(c.createdAt)}</span>
+                    <li key={c.id} className={`p-2 border border-zinc-800 bg-zinc-950 text-[10px] space-y-1`}>
+                      <div className="flex items-center justify-between font-bold text-zinc-400">
+                        <span className="text-zinc-300">{profile.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] text-zinc-500">{commentRelativeTime(c.createdAt)}</span>
+                          <button
+                            className="text-[9px] text-zinc-400 hover:text-red-400 transition font-bold underline"
+                            onClick={() => handleDeleteComment(c.id)}
+                            aria-label="Delete comment"
+                          >
+                            DELETE
+                          </button>
                         </div>
-                        <p className="text-[13px] text-[#555] leading-relaxed mt-0.5">{c.text}</p>
                       </div>
-                      <button
-                        className="opacity-0 group-hover:opacity-100 text-[12px] text-[#ccc] hover:text-red-400 transition-all flex-shrink-0 mt-1 px-1"
-                        onClick={() => handleDeleteComment(c.id)}
-                        aria-label="Delete comment"
-                      >
-                        ×
-                      </button>
+                      <p className="text-zinc-300">{c.text}</p>
                     </li>
                   ))}
                 </ul>
@@ -398,31 +395,22 @@ export default function PostCard({ memo, onEdit, onRefresh, onTagClick, id }: Pr
             </div>
 
             {/* Comment input */}
-            <div className="flex items-center gap-3 px-4 py-3 border-t border-[#f0ede8] bg-white flex-shrink-0">
-              <div
-                className={`w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br ${profile.avatarColor} flex items-center justify-center`}
-              >
-                {profile.avatar ? (
-                  <img src={profile.avatar} alt="" className="w-full h-full rounded-full object-cover" />
-                ) : (
-                  <span className="text-[18px]">{profile.avatarEmoji}</span>
-                )}
-              </div>
+            <div className="flex gap-1.5 pt-1 border-t border-zinc-800 bg-zinc-950 p-3">
               <input
                 ref={inputRef}
                 type="text"
                 value={commentText}
                 onChange={e => setCommentText(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment() } }}
-                placeholder="Write a comment…"
-                className="flex-1 bg-[#f5f2ef] border border-transparent rounded-full px-4 py-2.5 text-[13px] outline-none focus:border-[#1a1a1a] focus:bg-white transition-all"
+                placeholder="ADD_MEMO..."
+                className="flex-1 px-3 py-1.5 bg-zinc-900 border border-zinc-700 text-xs outline-none focus:border-white uppercase placeholder:text-zinc-600 font-mono"
               />
               <button
-                className={`text-[13px] font-semibold transition-colors px-1 flex-shrink-0 ${commentText.trim() ? 'text-[#1a1a1a] hover:text-[#333]' : 'text-[#ccc]'}`}
+                className={`px-3 py-1.5 bg-white text-black text-xs font-black hover:bg-zinc-200 uppercase`}
                 onClick={handleAddComment}
                 disabled={!commentText.trim()}
               >
-                Post
+                ADD
               </button>
             </div>
           </div>

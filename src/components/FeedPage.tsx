@@ -3,6 +3,7 @@ import { getMemos } from '../lib/storage'
 import type { Memo } from '../lib/types'
 import PostCard from './PostCard'
 import StoryViewer, { Post as StoryPost } from './StoryViewer'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface Props {
   refreshKey: number
@@ -12,9 +13,13 @@ interface Props {
   onClearSelection: () => void
   onSelectMemo?: (id: number) => void
   onTagEditClick?: () => void
+  storyTag?: string | null
+  onStoryTagOpened?: () => void
+  onOpenStoryPost?: (id: number, tag: string) => void
 }
 
-export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId, onClearSelection, onSelectMemo, onTagEditClick }: Props) {
+export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId, onClearSelection, onSelectMemo, onTagEditClick, storyTag, onStoryTagOpened, onOpenStoryPost }: Props) {
+  const { theme } = useTheme()
   const [memos, setMemos] = useState<Memo[]>([])
   const [allTags, setAllTags] = useState<string[]>([])
   const [activeTag, setActiveTag] = useState<string | null>(null)
@@ -120,6 +125,12 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
     setStoryOpen(true)
   }
 
+  useEffect(() => {
+    if (!storyTag || allTags.length === 0) return
+    handleTagClick(storyTag)
+    onStoryTagOpened?.()
+  }, [storyTag, allTags, onStoryTagOpened])
+
   // called when StoryViewer finishes all posts in the current tag
   function handleTagFinish() {
     if (currentTagIndex == null) {
@@ -154,32 +165,32 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
   return (
     <div>
       {allTags.length > 0 && (
-        <div className="flex gap-3 overflow-x-auto px-4 py-4">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
           {allTags.map(tag => {
             const latestImage = getLatestImageForTag(tag)
             return (
               <button
                 key={tag}
                 onClick={() => handleTagClick(tag)}
-                className="flex-shrink-0 w-16 h-16 rounded-full text-[11px] font-medium border-2 transition-all flex flex-col items-center justify-center relative overflow-hidden"
-                style={{
-                  borderColor: activeTag === tag ? '#1a1a1a' : '#e8e3dd',
-                  boxShadow: activeTag === tag ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
-                  backgroundColor: !latestImage ? (activeTag === tag ? '#1a1a1a' : '#faf9f7') : 'transparent',
-                  color: !latestImage ? (activeTag === tag ? 'white' : '#777') : 'white'
-                }}
+                className="flex flex-col items-center gap-1.5 group shrink-0"
               >
-                {latestImage && (
-                  <>
-                    <img
-                      src={latestImage}
-                      alt=""
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/30" />
-                  </>
-                )}
-                <span className="relative z-10 font-medium px-1">
+                <div className="relative p-0.5 border-2 border-black dark:border-white bg-white dark:bg-black group-hover:scale-105 transition duration-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="w-16 h-16 bg-zinc-900 overflow-hidden relative border border-zinc-700">
+                    {latestImage && (
+                      <img
+                        src={latestImage}
+                        alt=""
+                        className="w-full h-full object-cover transition duration-300"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/10 transition flex items-center justify-center">
+                      <span className="text-[10px] font-black text-white bg-black/80 px-1 border border-zinc-500">
+                        #{tag}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold tracking-tight uppercase truncate max-w-[80px]">
                   #{tag}
                 </span>
               </button>
@@ -188,31 +199,35 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
           {onTagEditClick && (
             <button
               onClick={onTagEditClick}
-              className="flex-shrink-0 w-16 h-16 rounded-full text-[11px] font-medium border-2 transition-all flex flex-col items-center justify-center relative overflow-hidden border-[#e8e3dd] bg-[#faf9f7] text-[#777] hover:border-[#d0c9c0] hover:text-[#1a1a1a]"
+              className="flex flex-col items-center gap-1.5 group shrink-0"
             >
-              <span className="text-2xl font-light">+</span>
+              <div className="w-16 h-16 border-2 border-black dark:border-white bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-white transition">
+                <span className="text-2xl font-black">+</span>
+              </div>
+              <span className="text-[10px] font-bold tracking-tight uppercase">ADD_TAG</span>
             </button>
           )}
         </div>
       )}
 
       {memos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <span className="text-5xl opacity-30">📖</span>
-          <p className="text-[14px] text-[#9a9a9a]">
-            {activeTag ? `No entries tagged #${activeTag}` : 'Start your diary — tap + to write'}
+        <div className={`p-10 text-center border-2 ${theme.border} ${theme.cardBg} space-y-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}>
+          <p className="text-3xl">📟</p>
+          <p className="font-bold text-sm tracking-widest">[ NO_ENTRIES_FOUND ]</p>
+          <p className={`text-xs ${theme.textSecondary}`}>
+            {activeTag ? `No entries tagged #${activeTag}` : '새로운 일기를 기록하거나 필터를 변경해 보세요.'}
           </p>
           {activeTag && (
             <button
-              className="text-[13px] text-[#1a1a1a] font-medium"
+              className={`text-xs font-bold px-3 py-1 border-2 ${theme.border} ${theme.chipBg} hover:bg-black hover:text-white transition`}
               onClick={() => setActiveTag(null)}
             >
-              Clear filter
+              CLEAR_FILTER
             </button>
           )}
         </div>
       ) : (
-        <div>
+        <div className="space-y-4">
           {memos.map(memo => (
             <PostCard
               key={memo.id}
@@ -244,7 +259,10 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
             setCurrentTagIndex(null)
             setTagOrder([])
             const parsedId = typeof id === 'string' ? parseInt(id, 10) : id
-            if (onSelectMemo) {
+            const activeStoryTag = tagOrder[currentTagIndex ?? 0]
+            if (onOpenStoryPost && activeStoryTag) {
+              onOpenStoryPost(parsedId, activeStoryTag)
+            } else if (onSelectMemo) {
               onSelectMemo(parsedId)
             } else {
               const memoObj = getMemos().find(m => m.id === parsedId)

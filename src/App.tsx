@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react"
 import type { Memo, Page } from "./lib/types"
-import { initSampleData, getMemo, deleteMemo } from "./lib/storage"
+import { initSampleData, getMemo, deleteMemo, migrateStoredImages } from "./lib/storage"
 import FeedPage from "./components/FeedPage"
 import SearchPage from "./components/SearchPage"
 import MyPage from "./components/MyPage"
@@ -10,32 +10,47 @@ import TagEditPage from "./components/TagEditPage"
 import EditorModal from "./components/EditorModal"
 import BottomNav from "./components/BottomNav"
 import PostDetailPage from "./components/PostDetailPage"
+import ThemedLayout from "./components/ThemedLayout"
+import { ThemeProvider, useTheme } from "./contexts/ThemeContext"
+import { hydrateStoredImages } from "./lib/imageStore"
 
 initSampleData()
 
 const PAGE_LABELS: Record<Page, string> = {
-  home: "CONTACT.",
-  search: "Search",
-  my: "My Page",
-  bookmark: "Saved",
-  settings: "Settings",
-  tagEdit: "Edit Tags",
+  home: "FEED_LOG",
+  search: "SEARCH_LOG",
+  my: "MY_PAGE",
+  bookmark: "SAVED_DRAFTS",
+  settings: "SYSTEM_CONFIG",
+  tagEdit: "TAG_MANAGE",
 }
 
-export default function App() {
+function AppContent() {
   const [page, setPage] = useState<Page>("home")
   const [refreshKey, setRefreshKey] = useState(0)
   const [selectedMemoId, setSelectedMemoId] = useState<number | null>(null)
   // undefined = editor closed, null = new entry, Memo = editing
   const [editing, setEditing] = useState<Memo | null | undefined>(undefined)
   const [pageStack, setPageStack] = useState<Page[]>(["home"])
+  const [imagesReady, setImagesReady] = useState(false)
+  const [storyTag, setStoryTag] = useState<string | null>(null)
+  const [storyReturnTag, setStoryReturnTag] = useState<string | null>(null)
+  const { theme } = useTheme()
 
   // Remove dark mode class on mount
   useEffect(() => {
     document.documentElement.classList.remove('dark')
+    migrateStoredImages()
+      .then(hydrateStoredImages)
+      .catch(() => undefined)
+      .finally(() => setImagesReady(true))
   }, [])
 
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), [])
+
+  if (!imagesReady) {
+    return <div className={`min-h-screen ${theme.bg}`} />
+  }
   const openNew = () => setEditing(null)
   const openEdit = (memo: Memo) => setEditing(memo)
   const closeEditor = () => setEditing(undefined)
@@ -50,6 +65,7 @@ export default function App() {
 
   const handlePageChange = (newPage: Page) => {
     setSelectedMemoId(null)
+    setStoryReturnTag(null)
     setPageStack([newPage])
     setPage(newPage)
   }
@@ -81,101 +97,131 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex justify-center bg-[#e8e3dd]">
-      <div className="w-full max-w-[480px] min-h-screen relative shadow-[0_0_40px_rgba(0,0,0,0.06)] bg-white">
-        {/* Sticky header */}
-        {!selectedMemoId && (
-          <header className="sticky top-0 z-30 flex items-center justify-between px-5 py-4 backdrop-blur-sm border-b bg-white/95 border-[#f0ede8]">
+    <ThemedLayout>
+      {/* Sticky header */}
+      {!selectedMemoId && (
+        <header className={`sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b-2 ${theme.border} ${theme.cardBg} shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]`}>
           <div className="flex items-center gap-3">
             {(page === "settings" || page === "tagEdit") && (
               <button
                 onClick={page === "settings" ? handleBackFromSettings : handleBackFromTagEdit}
-                className="w-8 h-8 flex items-center justify-center transition-colors text-lg text-[#bbb] hover:text-[#555]"
+                className={`w-8 h-8 flex items-center justify-center transition-colors text-lg border-2 ${theme.border} ${theme.chipBg} hover:bg-black hover:text-white`}
                 aria-label="Back"
               >
                 ‹
               </button>
             )}
-            <h1
-              className="font-sans text-[19px] font-bold leading-none not-italic text-[#1a1a1a]"
-            >
-              {PAGE_LABELS[page]}
-            </h1>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 border-2 border-current bg-black text-white flex items-center justify-center font-bold text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                Y2K
+              </div>
+              <h1
+                className="text-base font-black tracking-widest uppercase"
+              >
+                {PAGE_LABELS[page]}
+              </h1>
+            </div>
           </div>
           {page === "my" && (
             <button
               onClick={handleSettingsClick}
-              className="w-8 h-8 flex items-center justify-center transition-colors text-lg text-[#bbb] hover:text-[#555]"
+              className={`w-8 h-8 flex items-center justify-center transition-colors text-lg border-2 ${theme.border} ${theme.chipBg} hover:bg-black hover:text-white`}
               aria-label="Settings"
             >
               ⚙️
             </button>
           )}
         </header>
-        )}
+      )}
 
-        {/* Page content */}
-        <main className="pb-16">
-          {selectedMemoId ? (
-            <PostDetailPage
-              memo={getMemo(selectedMemoId)}
-              currentPage={pageStack[pageStack.length - 1] || "home"}
-              onBack={() => {
-                setSelectedMemoId(null)
+      {/* Page content */}
+      <main className="pb-20 p-4">
+        {selectedMemoId ? (
+          <PostDetailPage
+            memo={getMemo(selectedMemoId)}
+            currentPage={pageStack[pageStack.length - 1] || "home"}
+            onBack={() => {
+              setSelectedMemoId(null)
+              if (storyReturnTag) {
+                setPageStack(["home"])
+                setPage("home")
+                setStoryTag(storyReturnTag)
+                setStoryReturnTag(null)
+              } else {
                 setPage(pageStack[pageStack.length - 1] || "home")
-              }}
-              onEdit={openEdit}
-              onDelete={(id) => {
-                deleteMemo(id)
-                setSelectedMemoId(null)
-                setPage(pageStack[pageStack.length - 1] || "home")
-                refresh()
-              }}
-              onRefresh={refresh}
-            />
-          ) : page === "home" ? (
-            <FeedPage
-              refreshKey={refreshKey}
-              onEdit={openEdit}
-              onRefresh={refresh}
-              selectedMemoId={selectedMemoId}
-              onClearSelection={() => setSelectedMemoId(null)}
-              onSelectMemo={handleSelectMemo}
-              onTagEditClick={handleTagEditClick}
-            />
-          ) : page === "search" ? (
-            <SearchPage onEdit={openEdit} onRefresh={refresh} onSelectMemo={handleSelectMemo} />
-          ) : page === "my" ? (
-            <MyPage
-              refreshKey={refreshKey}
-              onEdit={openEdit}
-              onSelectMemo={handleSelectMemo}
-            />
-          ) : page === "settings" ? (
-            <SettingsPage refreshKey={refreshKey} onRefresh={refresh} onTagEditClick={handleTagEditClick} />
-          ) : page === "tagEdit" ? (
-            <TagEditPage refreshKey={refreshKey} onRefresh={refresh} />
-          ) : (
-            <BookmarkPage
-              refreshKey={refreshKey}
-              onEdit={openEdit}
-              onRefresh={refresh}
-            />
-          )}
-        </main>
-
-        {/* Bottom navigation */}
-        <BottomNav current={selectedMemoId ? (pageStack[pageStack.length - 1] || "home") : page} onChange={handlePageChange} onNew={openNew} />
-
-        {/* Editor modal — editing !== undefined means it's open */}
-        {editing !== undefined && (
-          <EditorModal
-            memo={editing}
-            onSave={handleSave}
-            onClose={closeEditor}
+              }
+            }}
+            onEdit={openEdit}
+            onDelete={(id) => {
+              deleteMemo(id)
+              setSelectedMemoId(null)
+              setPage(pageStack[pageStack.length - 1] || "home")
+              refresh()
+            }}
+            onRefresh={refresh}
+            onTagClick={(tag) => {
+              setSelectedMemoId(null)
+              setPageStack(["home"])
+              setPage("home")
+              setStoryTag(tag)
+            }}
+          />
+        ) : page === "home" ? (
+          <FeedPage
+            refreshKey={refreshKey}
+            onEdit={openEdit}
+            onRefresh={refresh}
+            selectedMemoId={selectedMemoId}
+            onClearSelection={() => setSelectedMemoId(null)}
+            onSelectMemo={handleSelectMemo}
+            onTagEditClick={handleTagEditClick}
+            storyTag={storyTag}
+            onStoryTagOpened={() => setStoryTag(null)}
+            onOpenStoryPost={(id, tag) => {
+              setStoryReturnTag(tag)
+              handleSelectMemo(id)
+            }}
+          />
+        ) : page === "search" ? (
+          <SearchPage onEdit={openEdit} onRefresh={refresh} onSelectMemo={handleSelectMemo} />
+        ) : page === "my" ? (
+          <MyPage
+            refreshKey={refreshKey}
+            onEdit={openEdit}
+            onSelectMemo={handleSelectMemo}
+          />
+        ) : page === "settings" ? (
+          <SettingsPage refreshKey={refreshKey} onRefresh={refresh} onTagEditClick={handleTagEditClick} />
+        ) : page === "tagEdit" ? (
+          <TagEditPage refreshKey={refreshKey} onRefresh={refresh} />
+        ) : (
+          <BookmarkPage
+            refreshKey={refreshKey}
+            onEdit={openEdit}
+            onRefresh={refresh}
           />
         )}
-      </div>
-    </div>
+      </main>
+
+      {/* Bottom navigation */}
+      <BottomNav current={selectedMemoId ? (pageStack[pageStack.length - 1] || "home") : page} onChange={handlePageChange} onNew={openNew} />
+
+      {/* Editor modal — editing !== undefined means it's open */}
+      {editing !== undefined && (
+        <EditorModal
+          memo={editing}
+          onSave={handleSave}
+          onClose={closeEditor}
+        />
+      )}
+    </ThemedLayout>
+  )
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   )
 }
