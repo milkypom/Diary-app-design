@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { getMemos, getTagListStyle } from '../lib/storage'
-import type { Memo, TagListStyle } from '../lib/types'
+import { getMemos } from '../lib/storage'
+import type { Memo } from '../lib/types'
 import PostCard from './PostCard'
 import StoryViewer, { Post as StoryPost } from './StoryViewer'
 
@@ -18,7 +18,6 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
   const [memos, setMemos] = useState<Memo[]>([])
   const [allTags, setAllTags] = useState<string[]>([])
   const [activeTag, setActiveTag] = useState<string | null>(null)
-  const [tagListStyle, setTagListStyle] = useState<TagListStyle>('circle')
 
   // story state & tag progression
   const [storyOpen, setStoryOpen] = useState(false)
@@ -42,7 +41,6 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
     const tags = Array.from(new Set(all.flatMap(m => m.tags || []).filter(Boolean)))
     setAllTags(tags)
     setMemos(activeTag ? all.filter(m => m.tags?.includes(activeTag)) : all)
-    setTagListStyle(getTagListStyle())
   }, [refreshKey, activeTag])
 
   useEffect(() => {
@@ -52,9 +50,9 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
         const element = document.getElementById(`memo-${selectedMemoId}`)
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          element.classList.add('ring-2', 'ring-[#c87941]', 'ring-offset-2')
+          element.classList.add('ring-2', 'ring-[#1a1a1a]', 'ring-offset-2')
           setTimeout(() => {
-            element.classList.remove('ring-2', 'ring-[#c87941]', 'ring-offset-2')
+            element.classList.remove('ring-2', 'ring-[#1a1a1a]', 'ring-offset-2')
             onClearSelection()
           }, 2000)
         }
@@ -163,13 +161,13 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
               <button
                 key={tag}
                 onClick={() => handleTagClick(tag)}
-                className={`flex-shrink-0 ${
-                  tagListStyle === 'folder' ? 'w-14 h-14 rounded-xl' : 'w-16 h-16 rounded-full'
-                } text-[11px] font-medium border-2 transition-all flex flex-col items-center justify-center relative overflow-hidden ${
-                  activeTag === tag
-                    ? 'border-[#1a1a1a] shadow-md'
-                    : 'border-[#e8e3dd] hover:border-[#d0c9c0]'
-                } ${!latestImage ? (activeTag === tag ? 'bg-[#1a1a1a] text-white' : 'bg-[#faf9f7] text-[#777]') : ''}`}
+                className="flex-shrink-0 w-16 h-16 rounded-full text-[11px] font-medium border-2 transition-all flex flex-col items-center justify-center relative overflow-hidden"
+                style={{
+                  borderColor: activeTag === tag ? '#1a1a1a' : '#e8e3dd',
+                  boxShadow: activeTag === tag ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+                  backgroundColor: !latestImage ? (activeTag === tag ? '#1a1a1a' : '#faf9f7') : 'transparent',
+                  color: !latestImage ? (activeTag === tag ? 'white' : '#777') : 'white'
+                }}
               >
                 {latestImage && (
                   <>
@@ -181,10 +179,7 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
                     <div className="absolute inset-0 bg-black/30" />
                   </>
                 )}
-                                {tagListStyle === 'folder' && !latestImage && (
-                  <img src="/img/folder01.png" alt="" className="absolute inset-0 w-full h-full object-contain p-2" />
-                )}
-                <span className={`relative z-10 font-medium px-1 ${latestImage ? 'text-white' : ''}`}>
+                <span className="relative z-10 font-medium px-1">
                   #{tag}
                 </span>
               </button>
@@ -193,9 +188,7 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
           {onTagEditClick && (
             <button
               onClick={onTagEditClick}
-              className={`flex-shrink-0 ${
-                tagListStyle === 'folder' ? 'w-14 h-14 rounded-xl' : 'w-16 h-16 rounded-full'
-              } text-[11px] font-medium border-2 transition-all flex flex-col items-center justify-center relative overflow-hidden border-[#e8e3dd] bg-[#faf9f7] text-[#777] hover:border-[#d0c9c0] hover:text-[#1a1a1a]`}
+              className="flex-shrink-0 w-16 h-16 rounded-full text-[11px] font-medium border-2 transition-all flex flex-col items-center justify-center relative overflow-hidden border-[#e8e3dd] bg-[#faf9f7] text-[#777] hover:border-[#d0c9c0] hover:text-[#1a1a1a]"
             >
               <span className="text-2xl font-light">+</span>
             </button>
@@ -211,7 +204,7 @@ export default function FeedPage({ refreshKey, onEdit, onRefresh, selectedMemoId
           </p>
           {activeTag && (
             <button
-              className="text-[13px] text-[#c87941] font-medium"
+              className="text-[13px] text-[#1a1a1a] font-medium"
               onClick={() => setActiveTag(null)}
             >
               Clear filter

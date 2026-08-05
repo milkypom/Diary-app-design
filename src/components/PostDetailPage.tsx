@@ -210,8 +210,8 @@ export default function PostDetailPage({
             aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark'}
           >
             <img
-              src={bookmarked ? '/img/heart_fill.png' : '/img/heart_line.png'}
-              alt={bookmarked ? 'Bookmarked' : 'Not bookmarked'}
+              src={bookmarked ? '/img/saved_on.png' : '/img/saved_off.png'}
+              alt={bookmarked ? 'Saved' : 'Not bookmarked'}
               className="w-full h-full object-contain"
             />
           </button>
@@ -224,7 +224,7 @@ export default function PostDetailPage({
         {memo.tags && memo.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
             {memo.tags.map((t) => (
-              <span key={t} className="text-[12px] text-[#c87941]">
+              <span key={t} className="text-[12px] text-[#1a1a1a]">
                 #{t}
               </span>
             ))}
@@ -313,7 +313,7 @@ export default function PostDetailPage({
             <button
               onClick={handleAddComment}
               className={`text-[13px] font-semibold ${
-                commentText.trim() ? "text-[#c87941]" : "text-[#ccc]"
+                commentText.trim() ? "text-[#1a1a1a]" : "text-[#ccc]"
               }`}
               disabled={!commentText.trim()}
             >

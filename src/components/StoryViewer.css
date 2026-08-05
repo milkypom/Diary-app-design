@@ -123,7 +123,7 @@
 }
 
 .story-title { font-size:16px; font-weight:700; }
-.story-body { font-size:14px; color:rgba(255,255,255,0.95); max-height:6.6em; overflow:hidden; line-height: 1.4; }
+.story-body { font-size:14px; color:rgba(255,255,255,0.95); max-height:6.6em; overflow:hidden; line-height: 1.4; cursor: pointer; }
 
 .caption-more-btn {
   background: none;
@@ -186,23 +186,26 @@
   left: 50%;
   transform: translateX(-50%);
   bottom: 12px;
-  background: rgba(0,0,0,0.5);
-  color: white;
+  background: transparent;
   border: none;
   width: 36px;
   height: 36px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
   cursor: pointer;
   z-index: 50;
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease;
 }
 
 .caption-toggle-btn:hover {
-  background: rgba(0,0,0,0.7);
+  opacity: 0.7;
+}
+
+.caption-toggle-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
 

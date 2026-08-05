@@ -204,7 +204,7 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
             </button>
             <div className="flex items-center gap-1">
               <button
-                className="font-semibold text-[15px] text-[#1a1a1a] hover:text-[#c87941] transition-colors"
+                className="font-semibold text-[15px] text-[#1a1a1a] hover:text-[#333] transition-colors"
                 onClick={() => {
                   setYearInput(calYear.toString())
                   setShowYearPicker(true)
@@ -214,7 +214,7 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
               </button>
               <span className="text-[#ddd]">·</span>
               <button
-                className="font-semibold text-[15px] text-[#1a1a1a] hover:text-[#c87941] transition-colors"
+                className="font-semibold text-[15px] text-[#1a1a1a] hover:text-[#333] transition-colors"
                 onClick={() => setShowMonthPicker(true)}
               >
                 {new Date(calYear, calMonth).toLocaleString('en-US', { month: 'long' })}
@@ -274,7 +274,7 @@ export default function MyPage({ refreshKey, onEdit, onSelectMemo }: Props) {
                   {dayMemos.length > 0 && (
                     <span
                       className={`absolute bottom-1 right-1 text-[10px] font-bold ${
-                        isSelected ? 'text-white/90' : 'text-[#c87941]'
+                        isSelected ? 'text-white/90' : 'text-[#1a1a1a]'
                       }`}
                     >
                       +{dayMemos.length}

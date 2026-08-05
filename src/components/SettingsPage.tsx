@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { downloadExportFile, importData, getTheme, saveTheme, getDeletedMemos, restoreMemo, permanentDeleteMemo, emptyTrash, getTagListStyle, saveTagListStyle, type ExportData } from '../lib/storage'
-import type { Theme, Memo, TagListStyle } from '../lib/types'
+import { downloadExportFile, importData, getDeletedMemos, restoreMemo, permanentDeleteMemo, emptyTrash, type ExportData } from '../lib/storage'
+import type { Memo } from '../lib/types'
 
 interface Props {
   refreshKey?: number
@@ -9,30 +9,14 @@ interface Props {
 }
 
 export default function SettingsPage({ refreshKey, onRefresh, onTagEditClick }: Props) {
-  const [tagListStyle, setTagListStyle] = useState<TagListStyle>('circle')
-  const [theme, setTheme] = useState<Theme>('auto')
   const [importStatus, setImportStatus] = useState<{ success: boolean; message: string } | null>(null)
   const [showTrash, setShowTrash] = useState(false)
   const [deletedMemos, setDeletedMemos] = useState<Memo[]>([])
   const [permanentlyDeleting, setPermanentlyDeleting] = useState<number | null>(null)
 
   useEffect(() => {
-    setTagListStyle(getTagListStyle())
-    setTheme(getTheme())
     setDeletedMemos(getDeletedMemos())
   }, [refreshKey])
- 
-  const handleTagListStyleChange = (style: TagListStyle) => {
-    setTagListStyle(style)
-    saveTagListStyle(style)
-    onRefresh?.()
-  }
-
-  const handleThemeChange = (newTheme: Theme) => {
-    setTheme(newTheme)
-    saveTheme(newTheme)
-    onRefresh?.()
-  }
 
   const handleExport = () => {
     downloadExportFile()
@@ -89,61 +73,13 @@ export default function SettingsPage({ refreshKey, onRefresh, onTagEditClick }: 
       <div className="mb-8">
         <button
           onClick={onTagEditClick}
-          className="w-full px-4 py-3 bg-[#faf9f7] rounded-xl border border-[#f0ede8] flex items-center justify-between hover:bg-[#f0ede8] transition-colors"
+          className="w-full px-4 py-3 bg-[#1a1a1a] text-white text-[14px] font-medium rounded-xl hover:bg-[#333] transition-colors"
         >
-          <div className="flex items-center gap-3">
-            <span className="text-xl">🏷️</span>
-            <span className="text-[14px] font-medium text-[#1a1a1a]">Edit Tags</span>
-          </div>
-          <span className="text-[#bbb]">›</span>
+          Edit Tags
         </button>
       </div>
 
-      {/* Theme Setting */}
-      <div className="mb-8">
-        <h3 className="text-[16px] font-semibold text-[#1a1a1a] mb-4">Theme</h3>
-        <div className="flex gap-3">
-          <button
-            onClick={() => handleThemeChange('light')}
-            className={`flex-1 px-4 py-3 rounded-xl border-2 transition-all ${
-              theme === 'light'
-                ? 'border-[#1a1a1a] bg-[#1a1a1a] text-white'
-                : 'border-[#e8e3dd] bg-white text-[#1a1a1a] hover:border-[#c87941]'
-            }`}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-2xl">☀️</span>
-              <span className="text-[12px] font-medium">Light</span>
-            </div>
-          </button>
-          <button
-            onClick={() => handleThemeChange('dark')}
-            className={`flex-1 px-4 py-3 rounded-xl border-2 transition-all ${
-              theme === 'dark'
-                ? 'border-[#1a1a1a] bg-[#1a1a1a] text-white'
-                : 'border-[#e8e3dd] bg-white text-[#1a1a1a] hover:border-[#c87941]'
-            }`}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-2xl">🌙</span>
-              <span className="text-[12px] font-medium">Dark</span>
-            </div>
-          </button>
-          <button
-            onClick={() => handleThemeChange('auto')}
-            className={`flex-1 px-4 py-3 rounded-xl border-2 transition-all ${
-              theme === 'auto'
-                ? 'border-[#1a1a1a] bg-[#1a1a1a] text-white'
-                : 'border-[#e8e3dd] bg-white text-[#1a1a1a] hover:border-[#c87941]'
-            }`}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-2xl">🔄</span>
-              <span className="text-[12px] font-medium">Auto</span>
-            </div>
-          </button>
-        </div>
-      </div>
+
 
       {/* Data Management Section */}
       <h2 className="text-[20px] font-semibold text-[#1a1a1a] mb-6 mt-8">Data Management</h2>
@@ -158,7 +94,7 @@ export default function SettingsPage({ refreshKey, onRefresh, onTagEditClick }: 
           >
             Export Data
           </button>
-          <label className="flex-1 px-4 py-3 bg-[#e8e3dd] text-[#1a1a1a] text-[14px] font-medium rounded-xl hover:bg-[#d0c9c0] transition-colors text-center cursor-pointer">
+          <label className="flex-1 px-4 py-3 bg-[#1a1a1a] text-white text-[14px] font-medium rounded-xl hover:bg-[#333] transition-colors text-center cursor-pointer">
             Import Data
             <input type="file" accept=".json" onChange={handleImport} className="hidden" />
           </label>
